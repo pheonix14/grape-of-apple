@@ -40,6 +40,43 @@
             .bg-gradient-4 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
             
             /* --- NEON NODES --- */
+            /* --- CARDBOARD STEREOSCOPIC MODE (Lensless 8cm Optimization) --- */
+            body.cardboard-mode #media-right {
+                display: block !important;
+            }
+
+            #cardboard-container {
+                display: flex;
+                width: 100vw;
+                height: 100vh;
+                background: #000;
+            }
+
+            #cardboard-container::after {
+                content: '';
+                position: absolute;
+                left: 50vw; top: 0; bottom: 0;
+                width: 1px;
+                background: rgba(255, 255, 255, 0.1);
+                z-index: 10000;
+            }
+
+            .eye-viewport {
+                width: 50vw;
+                height: 100vh;
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* Base transform for lensless 8cm convergence */
+            .eye-viewport.left {
+                transform: translateX(calc(-1 * (var(--ipd-offset) + 20px))) translateY(var(--v-offset)) scale(var(--view-scale));
+            }
+
+            .eye-viewport.right {
+                transform: translateX(calc(var(--ipd-offset) + 20px)) translateY(var(--v-offset)) scale(var(--view-scale));
+            }
+
             .star-node {
                 display: flex; justify-content: center; align-items: center;
                 background: #ff003c; width: 14px; height: 14px; border-radius: 50%;
@@ -47,8 +84,8 @@
                 animation: pulse-star 2s infinite ease-in-out;
             }
             @keyframes pulse-star {
-                0%, 100% { transform: scale(1) !important; opacity: 1; box-shadow: 0 0 15px #ff003c; }
-                50% { transform: scale(1.4) !important; opacity: 0.7; box-shadow: 0 0 25px #ff003c; }
+                0%, 100% { transform: scale(1) !important; opacity: 1; box-shadow: 0 0 15px var(--node-glow); }
+                50% { transform: scale(1.4) !important; opacity: 0.7; box-shadow: 0 0 25px var(--node-glow); }
             }
             
             .crosshair-pointer {
@@ -79,13 +116,21 @@
     </style>
 </head>
 <body class="w-screen h-screen overflow-hidden bg-black select-none text-white transition-colors duration-500 dynamic-text tron-ares-bw">
-    <div class="absolute inset-0 z-0">
-        <video id="input_video" class="w-full h-full object-cover" autoplay playsinline></video>
-        <canvas id="output_canvas" class="absolute inset-0 w-full h-full z-10 pointer-events-none opacity-30"></canvas>
-    </div>
+    <div id="main-wrapper" class="absolute inset-0 overflow-hidden">
+        <!-- Dual Viewport Media (Parallel Streams) -->
+        <div id="media-container" class="absolute inset-0 z-0 flex transition-all duration-500">
+            <div id="media-left" class="relative flex-1 overflow-hidden">
+                <video id="input_video" class="w-full h-full object-cover" autoplay playsinline></video>
+                <canvas id="output_canvas" class="absolute inset-0 w-full h-full z-10 pointer-events-none opacity-30"></canvas>
+            </div>
+            <div id="media-right" class="relative flex-1 overflow-hidden hidden">
+                <video id="input_video_right" class="w-full h-full object-cover" autoplay playsinline></video>
+                <canvas id="output_canvas_right" class="absolute inset-0 w-full h-full z-10 pointer-events-none opacity-30"></canvas>
+            </div>
+        </div>
 
-    <!-- Left Sidebar Toolbar -->
-    <div class="sidebar-toolbar absolute top-1/2 -translate-y-1/2 left-8 z-50 pointer-events-auto flex flex-col gap-6 transition-all duration-500 origin-left">
+        <!-- Left Sidebar Toolbar -->
+        <div class="sidebar-toolbar absolute top-1/2 -translate-y-1/2 left-8 z-50 pointer-events-auto flex flex-col gap-6 transition-all duration-500 origin-left">
         <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size" id="fullscreen-btn" title="Toggle Fullscreen">
             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
         </div>
@@ -192,11 +237,11 @@
                     Media Hub
                 </h2>
                 <div class="flex gap-4">
-                    <button id="btn-minimize" class="interactable bg-white/10 hover:bg-white/20 w-16 h-16 rounded-full flex items-center justify-center border border-white/20">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
+                    <button id="btn-minimize" class="interactable bg-white/10 hover:bg-white/20 w-20 h-20 rounded-full flex items-center justify-center border border-white/20">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
                     </button>
-                    <button id="btn-close" class="interactable bg-white/10 hover:bg-white/20 w-16 h-16 rounded-full flex items-center justify-center border border-white/20">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button id="btn-close" class="interactable bg-white/10 hover:bg-white/20 w-20 h-20 rounded-full flex items-center justify-center border border-white/20">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
             </div>
@@ -286,36 +331,36 @@
 
         <!-- Big Controls (Outside Map Panel - Top Center Bar) -->
         <div class="absolute top-8 left-1/2 -translate-x-1/2 z-[1000] flex flex-row gap-4 bg-black/40 backdrop-blur-md p-2 rounded-[32px] border border-white/10 shadow-2xl">
-            <button id="btn-map-zoom-in" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20 text-3xl font-bold">+</button>
-            <button id="btn-map-zoom-out" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20 text-3xl font-bold">-</button>
-            <button id="btn-map-locate" title="Locate Me" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            <button id="btn-map-zoom-in" class="interactable bg-black/60 text-white hover:bg-white/20 w-24 h-20 rounded-2xl flex items-center justify-center border border-white/20 text-4xl font-bold">+</button>
+            <button id="btn-map-zoom-out" class="interactable bg-black/60 text-white hover:bg-white/20 w-24 h-20 rounded-2xl flex items-center justify-center border border-white/20 text-4xl font-bold">-</button>
+            <button id="btn-map-locate" title="Locate Me" class="interactable bg-black/60 text-white hover:bg-white/20 w-24 h-20 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
             </button>
-            <button id="btn-map-marker" title="Place Marker" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <button id="btn-map-marker" title="Place Marker" class="interactable bg-black/60 text-white hover:bg-white/20 w-24 h-20 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             </button>
-            <button id="btn-map-clear" title="Clear All Markers" class="interactable bg-black/60 text-red-400 hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <button id="btn-map-clear" title="Clear All Markers" class="interactable bg-black/60 text-red-400 hover:bg-white/20 w-24 h-20 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
-            <button id="btn-map-stop" title="Stop Navigation" class="interactable bg-red-600/40 text-white hover:bg-red-600/60 w-20 h-16 rounded-2xl flex items-center justify-center border border-red-500/50 hidden">
-                <span class="font-bold text-xs uppercase tracking-widest">STOP</span>
+            <button id="btn-map-stop" title="Stop Navigation" class="interactable bg-red-600/40 text-white hover:bg-red-600/60 w-24 h-20 rounded-2xl flex items-center justify-center border border-red-500/50 hidden">
+                <span class="font-bold text-sm uppercase tracking-widest">STOP</span>
             </button>
-            <button id="btn-map-minimize" title="Minimize Map" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
+            <button id="btn-map-minimize" title="Minimize Map" class="interactable bg-black/60 text-white hover:bg-white/20 w-24 h-20 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
             </button>
         </div>
     </div>
 
     <!-- Tactical Intel Panel (Right Side) - Isolated for Persistence -->
-    <div id="tactical-intel" class="absolute top-24 right-6 z-[2000] w-96 flex flex-col gap-4 pointer-events-auto max-h-[80%] overflow-y-auto scrollbar-hide hidden">
+    <div id="tactical-intel" class="absolute top-24 right-6 z-[2000] w-[440px] flex flex-col gap-4 pointer-events-auto max-h-[80%] overflow-y-auto scrollbar-hide hidden">
         <div class="glass-panel p-6 rounded-[32px] border-blue-400/30 bg-blue-400/5 backdrop-blur-xl flex flex-col">
             <div class="flex justify-between items-start mb-2">
                 <div class="flex flex-col">
                     <h2 id="intel-name" class="text-2xl font-bold mb-1">Sector Name</h2>
                     <p id="intel-category" class="text-xs font-bold text-blue-400 uppercase tracking-widest">Category</p>
                 </div>
-                <button id="btn-intel-close" class="interactable bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center border border-white/20">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button id="btn-intel-close" class="interactable bg-white/10 hover:bg-white/20 w-12 h-12 rounded-full flex items-center justify-center border border-white/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
@@ -344,8 +389,8 @@
     <div id="keyboard-overlay" class="absolute bottom-40 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-4 p-10 glass-panel rounded-[40px] w-[1100px] transition-all duration-300">
         <div class="flex justify-between items-center mb-2">
             <h2 class="text-xs font-bold opacity-50 uppercase tracking-widest">Neural Input Deck</h2>
-            <button id="btn-keyboard-close" class="interactable bg-red-500/20 hover:bg-red-500/40 w-12 h-12 rounded-full flex items-center justify-center border border-red-500/50 text-red-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button id="btn-keyboard-close" class="interactable bg-red-500/20 hover:bg-red-500/40 w-14 h-14 rounded-full flex items-center justify-center border border-red-500/50 text-red-500">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
@@ -382,8 +427,8 @@
         <div class="flex flex-col gap-8">
             <div class="flex justify-between items-center">
                 <h2 class="text-3xl font-bold tracking-tight text-blue-400">AR Box Config</h2>
-                <button id="btn-cardboard-panel-close" class="interactable bg-white/10 hover:bg-white/20 w-12 h-12 rounded-full flex items-center justify-center border border-white/20">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button id="btn-cardboard-panel-close" class="interactable bg-white/10 hover:bg-white/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/20">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
 
@@ -413,14 +458,19 @@
                 </div>
             </div>
 
+            <button id="btn-physics-fix" class="interactable w-full py-6 bg-blue-500/20 hover:bg-blue-500/30 rounded-3xl border border-blue-500/40 text-blue-400 font-bold uppercase tracking-widest text-lg">
+                Apply Neural Calibration (8cm Fix)
+            </button>
+
             <div class="flex flex-col gap-4 p-4 bg-blue-500/5 rounded-3xl border border-blue-500/20 text-xs text-blue-300/60 leading-relaxed italic">
-                Adjust these settings until the dual viewports align perfectly with your eyes when using the AR box.
+                Physics Specs: IPD convergence, Near-field scaling, and Gaze curvature compensation.
             </div>
         </div>
     </div>
 
     <div id="spatial-cursor" class="spatial-cursor"></div>
     <div id="spatial-cursor-ring" class="spatial-cursor-ring"></div>
+    </div> <!-- End main-wrapper -->
 
     <script type="module" src="/static/js/main.js"></script>
 </body>

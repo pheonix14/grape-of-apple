@@ -28,6 +28,34 @@ export class HandTracker {
         });
     }
 
+    drawResults(results) {
+        this.ctx.save();
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        const canvasRight = document.getElementById('output_canvas_right');
+        const ctxRight = canvasRight?.getContext('2d');
+        if (ctxRight) {
+            ctxRight.save();
+            ctxRight.clearRect(0, 0, canvasRight.width, canvasRight.height);
+        }
+
+        if (results.multiHandLandmarks) {
+            for (const landmarks of results.multiHandLandmarks) {
+                // Draw landmarks on left canvas
+                drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 5});
+                drawLandmarks(this.ctx, landmarks, {color: '#FF0000', lineWidth: 2});
+                
+                // Draw landmarks on right canvas
+                if (ctxRight) {
+                    drawConnectors(ctxRight, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 5});
+                    drawLandmarks(ctxRight, landmarks, {color: '#FF0000', lineWidth: 2});
+                }
+            }
+        }
+        this.ctx.restore();
+        if (ctxRight) ctxRight.restore();
+    }
+
     start() {
         this.camera.start();
     }

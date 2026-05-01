@@ -17,22 +17,32 @@ export class CardboardController {
         this.valVoff = document.getElementById('val-voff');
         this.valVscale = document.getElementById('val-vscale');
         
-        this.bindEvents();
-        this.updateStyles(); // Ensure variables are set on boot
+        this.init();
     }
 
-    bindEvents() {
-        if (this.btnConfig) {
-            this.btnConfig.addEventListener('click', () => this.togglePanel(true));
-        }
-        if (this.btnClose) {
-            this.btnClose.addEventListener('click', () => this.togglePanel(false));
+    init() {
+        console.log("🚀 Initializing Neural Cardboard Engine...");
+        
+        // Mode Toggle
+        const toggleBtn = document.getElementById('btn-cardboard-toggle');
+        if (toggleBtn) {
+            toggleBtn.onclick = () => {
+                console.log("🔄 Cardboard Toggle Clicked");
+                this.toggleMode();
+            };
         }
 
-        // Neural Toggle Listener
-        document.getElementById('btn-cardboard-toggle')?.addEventListener('click', () => {
-            this.toggleMode();
-        });
+        // Config Panel
+        if (this.btnConfig) {
+            this.btnConfig.onclick = () => {
+                console.log("⚙️ Opening Cardboard Config");
+                this.togglePanel(true);
+            };
+        }
+
+        if (this.btnClose) {
+            this.btnClose.onclick = () => this.togglePanel(false);
+        }
 
         // Calibration Inputs
         this.rangeIpd?.addEventListener('input', (e) => {
@@ -52,16 +62,51 @@ export class CardboardController {
             this.valVscale.innerText = this.vScale;
             this.updateStyles();
         });
+
+        // Physics Fix Button
+        const physicsBtn = document.getElementById('btn-physics-fix');
+        if (physicsBtn) {
+            physicsBtn.onclick = () => {
+                console.log("🧬 Applying Neural Physics Specs (8cm Fix)");
+                this.ipd = 35; // Convergence Offset
+                this.vOff = -5; // Gaze curvature fix
+                this.vScale = 0.75; // Near-field focus fix
+                
+                // Update UI elements
+                if (this.rangeIpd) this.rangeIpd.value = this.ipd;
+                if (this.rangeVoff) this.rangeVoff.value = this.vOff;
+                if (this.rangeVscale) this.rangeVscale.value = this.vScale;
+                
+                if (this.valIpd) this.valIpd.innerText = `${this.ipd}px`;
+                if (this.valVoff) this.valVoff.innerText = `${this.vOff}px`;
+                if (this.valVscale) this.valVscale.innerText = this.vScale;
+                
+                this.updateStyles();
+            };
+        }
+
+        this.updateStyles();
     }
 
     toggleMode() {
         this.isActive = !this.isActive;
+        const body = document.body;
+        const mediaRight = document.getElementById('media-right');
+        const videoRight = document.getElementById('input_video_right');
+
         if (this.isActive) {
-            document.body.classList.add('cardboard-mode');
-            this.setupSplitScreen();
+            body.classList.add('cardboard-mode');
+            if (mediaRight) mediaRight.classList.remove('hidden');
+            
+            // Sync video streams
+            const videoLeft = document.getElementById('input_video');
+            if (videoLeft && videoRight && videoLeft.srcObject) {
+                videoRight.srcObject = videoLeft.srcObject;
+            }
+            this.updateStyles();
         } else {
-            document.body.classList.remove('cardboard-mode');
-            this.teardownSplitScreen();
+            body.classList.remove('cardboard-mode');
+            if (mediaRight) mediaRight.classList.add('hidden');
         }
     }
 

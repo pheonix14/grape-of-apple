@@ -261,7 +261,7 @@ export class MapController {
                 // STATIC GREEN DOT ICON (High Visibility, Upscaled for Pointer)
                 const huntIcon = L.divIcon({
                     className: 'static-green-dot',
-                    html: '<div class="star-node interactable" style="background-color:#00ff88; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 15px #00ff88;"></div>',
+                    html: '<div class="star-node interactable" style="--node-glow:#00ff88; background-color:#00ff88; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 15px #00ff88;"></div>',
                     iconSize: [24, 24], iconAnchor: [12, 12]
                 });
 
@@ -344,7 +344,7 @@ export class MapController {
                 // Update icon size dynamically
                 const newIcon = L.divIcon({
                     className: 'static-green-dot',
-                    html: `<div class="star-node interactable" style="background-color:#00ff88; width:${baseSize-4}px; height:${baseSize-4}px; border-radius:50%; border:${Math.max(1, baseSize/10)}px solid white; box-shadow:0 0 ${baseSize/2}px #00ff88;"></div>`,
+                    html: `<div class="star-node interactable" style="--node-glow:#00ff88; background-color:#00ff88; width:${baseSize-4}px; height:${baseSize-4}px; border-radius:50%; border:${Math.max(1, baseSize/10)}px solid white; box-shadow:0 0 ${baseSize/2}px #00ff88;"></div>`,
                     iconSize: iconSize,
                     iconAnchor: iconAnchor
                 });
