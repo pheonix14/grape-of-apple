@@ -11,47 +11,19 @@
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     transition: background-color 0.5s ease, font-size 0.3s ease, color 0.3s ease;
     font-size: var(--text-size);
     color: var(--text-primary);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.9);
-    font-weight: 400;
 }
 
-/* Force shadows and larger size on grey and semi-transparent text - Converting to white with heavy outlines */
-.text-white\/50, .text-white\/60, .text-white\/70, .opacity-60, .opacity-70, .tracking-widest, label, .text-white\/40 {
-    color: white !important;
-    text-shadow: 
-        -1px -1px 0 #000,  
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000,
-         0 2px 4px rgba(0,0,0,0.8) !important;
-    font-size: 1.1em !important; 
-    font-weight: 400 !important;
-    letter-spacing: 0.05em;
+.dynamic-text {
+    /* No longer needed but kept for compatibility */
 }
 
-/* Apply drop-shadow to all app icons and SVGs */
-svg {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
-    transition: filter 0.3s ease;
-}
-
-.interactable:hover svg {
-    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
-}
-
-/* Ensure all interactive text scales and shadows */
-.interactable, .glass-panel, input, button, span, h2, h3, div, p {
-    font-size: var(--text-size);
-    text-shadow: inherit;
-}
-
-.glass-panel h2 {
-    font-size: calc(var(--text-size) * 1.5);
-    font-weight: 700;
+/* Ensure all interactive text scales */
+.interactable, .glass-panel, input, button, span, h2, h3, div {
+    font-size: inherit;
 }
 
 .sidebar-toolbar {

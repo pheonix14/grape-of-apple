@@ -48,26 +48,14 @@ export class UIController {
     dispatchSpatialClick() {
         const elements = document.elementsFromPoint(this.currentX, this.currentY);
         
-        // Check if keyboard is open
-        const keyboardOverlay = document.getElementById('keyboard-overlay');
-        const isKeyboardVisible = keyboardOverlay && !keyboardOverlay.classList.contains('hidden');
-
-        let target;
-        if (isKeyboardVisible) {
-            // ONLY allow clicking elements INSIDE the keyboard overlay
-            target = elements.find(el => 
-                keyboardOverlay.contains(el) && el.classList.contains('interactable')
-            );
-        } else {
-            const interactable = elements.find(el => el.classList.contains('interactable'));
-            const mapContainer = elements.find(el => el.id === 'map-container');
-            
-            target = interactable || mapContainer || elements.find(el => 
-                !el.id?.includes('spatial-cursor') && 
-                !el.id?.includes('output_canvas') &&
-                !el.id?.includes('input_video')
-            );
-        }
+        const interactable = elements.find(el => el.classList.contains('interactable'));
+        const mapContainer = elements.find(el => el.id === 'map-container');
+        
+        const target = interactable || mapContainer || elements.find(el => 
+            !el.id?.includes('spatial-cursor') && 
+            !el.id?.includes('output_canvas') &&
+            !el.id?.includes('input_video')
+        );
 
         if (target) {
             target.classList.add('clicked');

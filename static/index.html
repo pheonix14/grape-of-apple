@@ -231,15 +231,9 @@
     </div>
 
     <!-- Virtual Keyboard Overlay -->
-    <div id="keyboard-overlay" class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-4 p-10 glass-panel rounded-[40px] w-[1100px] transition-all duration-300 shadow-2xl">
-        <div class="flex justify-between items-center mb-2">
-            <h3 class="text-2xl font-bold tracking-tight opacity-50">Spatial Keyboard</h3>
-            <button id="btn-keyboard-close" class="interactable bg-red-500/20 hover:bg-red-500/40 text-red-500 w-12 h-12 rounded-full flex items-center justify-center border border-red-500/30">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
+    <div id="keyboard-overlay" class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-2 p-6 glass-panel rounded-[32px] w-[800px] transition-all duration-300">
         <!-- Input Display -->
-        <div id="keyboard-display" class="bg-white/10 px-8 py-4 rounded-2xl text-2xl tracking-wide border border-white/20 min-h-[60px] flex items-center"></div>
+        <div id="keyboard-display" class="bg-white/10 px-6 py-3 rounded-2xl text-xl tracking-wide border border-white/20 min-h-[50px] flex items-center"></div>
         
         <!-- Keys -->
         <div id="keyboard-keys" class="grid grid-cols-10 gap-2 mt-4">
