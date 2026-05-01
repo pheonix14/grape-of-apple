@@ -84,6 +84,56 @@ body.app-open .sidebar-toolbar:hover {
     transition: transform 0.5s ease;
 }
 
+/* 3D Concave Cockpit Effect */
+body.cockpit-mode #main-wrapper {
+    perspective: 1200px;
+    background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%);
+}
+
+body.cockpit-mode .sidebar-toolbar {
+    transform: perspective(1200px) rotateY(30deg) translateX(40px) scale(0.9) !important;
+    transform-origin: left center;
+}
+
+body.cockpit-mode #tactical-intel {
+    transform: perspective(1200px) rotateY(-30deg) translateX(-40px) scale(0.9) !important;
+    transform-origin: right center;
+}
+
+body.cockpit-mode #map-window,
+body.cockpit-mode #music-player,
+body.cockpit-mode #cardboard-panel {
+    transform: perspective(1200px) translateZ(-100px) scale(0.9);
+}
+
+body.cockpit-mode::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: 
+        radial-gradient(circle at center, transparent 30%, rgba(0, 242, 255, 0.1) 100%),
+        repeating-linear-gradient(rgba(0,255,255,0.03) 0px, rgba(0,255,255,0.03) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(90deg, rgba(0,255,255,0.03) 0px, rgba(0,255,255,0.03) 1px, transparent 1px, transparent 40px);
+    z-index: 9999;
+    box-shadow: inset 0 0 200px rgba(0,0,0,0.9);
+}
+
+/* Cockpit Center Crosshair */
+body.cockpit-mode::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    border: 2px solid rgba(0, 242, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9998;
+    pointer-events: none;
+}
+
 /* Spatial Cursor */
 .spatial-cursor {
     position: absolute;

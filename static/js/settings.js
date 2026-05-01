@@ -90,6 +90,17 @@ export class SettingsController {
             console.log("🔄 Mirror Toggled:", this.isMirrored);
             this.updateStyles();
         });
+
+        // Cockpit Toggle
+        const cockpitBtn = document.getElementById('btn-cockpit-toggle');
+        if (cockpitBtn) {
+            cockpitBtn.addEventListener('click', () => {
+                document.body.classList.toggle('cockpit-mode');
+                const isActive = document.body.classList.contains('cockpit-mode');
+                cockpitBtn.innerText = isActive ? 'Disengage Cockpit' : 'Engage Cockpit Mode';
+                cockpitBtn.classList.toggle('bg-blue-500/40', isActive);
+            });
+        }
     }
 
     togglePanel() {

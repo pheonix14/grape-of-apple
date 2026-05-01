@@ -24,6 +24,9 @@ export class MusicPlayer {
         
         this.audioElement = document.getElementById('audio-element');
         
+        this.nowPlayingTitle = document.getElementById('now-playing-title');
+        this.nowPlayingArtist = document.getElementById('now-playing-artist');
+        
         this.audioContext = null;
         this.analyser = null;
         this.source = null;
@@ -96,6 +99,8 @@ export class MusicPlayer {
                     this.isPlaying = false;
                     this.updatePlayBtn();
                 }
+                this.nowPlayingTitle.innerText = "YouTube Stream";
+                this.nowPlayingArtist.innerText = "External Mission Data";
                 this.canvas.classList.add('hidden');
                 this.ytContainer.classList.remove('hidden');
                 this.ytIframe.src = embedUrl;
@@ -145,11 +150,17 @@ export class MusicPlayer {
     }
 
     renderMediaList(songs) {
-        this.mediaList.innerHTML = '<div class="text-sm opacity-50 uppercase tracking-widest mb-4 font-bold">Tactical Library</div>';
+        this.mediaList.innerHTML = '<div class="text-[10px] opacity-30 uppercase tracking-[0.2em] px-4 py-2 font-bold">Tactical Library</div>';
         songs.forEach(song => {
             const item = document.createElement('div');
-            item.className = 'flex items-center justify-between bg-white/5 hover:bg-white/10 px-6 py-4 rounded-2xl text-lg interactable transition-all mb-2';
-            item.innerHTML = `<span class="truncate pr-4 text-sm font-mono">${song}</span><svg class="w-6 h-6 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            item.className = 'flex items-center justify-between bg-white/5 hover:bg-white/10 px-4 py-3 rounded-xl text-sm interactable transition-all mb-1 group';
+            item.innerHTML = `
+                <div class="flex flex-col truncate">
+                    <span class="truncate text-white/80 font-bold">${song.split(' - ')[0]}</span>
+                    <span class="truncate text-[10px] text-white/30 uppercase tracking-widest">${song.split(' - ')[1] || 'Unknown Source'}</span>
+                </div>
+                <svg class="w-4 h-4 text-white/20 group-hover:text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            `;
             item.onclick = () => this.playFromServer(song);
             this.mediaList.appendChild(item);
         });
@@ -161,6 +172,8 @@ export class MusicPlayer {
         this.ytIframe.src = "";
         this.audioElement.src = URL.createObjectURL(file);
         this.audioElement.load();
+        this.nowPlayingTitle.innerText = file.name.split('.')[0];
+        this.nowPlayingArtist.innerText = "Local Intelligence File";
         this.initAudioContext();
         this.audioElement.play();
         this.isPlaying = true;
@@ -174,6 +187,11 @@ export class MusicPlayer {
         this.ytIframe.src = "";
         this.audioElement.src = `/static/media/${encodeURIComponent(filename)}`;
         this.audioElement.load();
+        
+        const parts = filename.split(' - ');
+        this.nowPlayingTitle.innerText = parts[0] || filename;
+        this.nowPlayingArtist.innerText = parts[1]?.split('.')[0] || "System Library";
+        
         this.initAudioContext();
         this.audioElement.play();
         this.isPlaying = true;
@@ -183,8 +201,8 @@ export class MusicPlayer {
 
     updatePlayBtn() {
         this.btnPlay.innerHTML = this.isPlaying 
-            ? `<svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`
-            : `<svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            ? `<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`
+            : `<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
     }
 
     initAudioContext() {
