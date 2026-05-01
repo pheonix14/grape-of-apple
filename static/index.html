@@ -229,19 +229,19 @@
     </div>
 
     <!-- Fullscreen Music Hub -->
-    <div id="music-player" class="absolute inset-0 z-40 pointer-events-auto flex items-center justify-center transition-all duration-500 hidden p-32">
-        <div class="music-bg glass-panel p-10 rounded-[40px] w-full h-full flex flex-col gap-8 relative overflow-hidden shadow-2xl">
+    <div id="music-player" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-auto flex items-center justify-center transition-all duration-500 hidden w-[900px] h-[650px]">
+        <div class="music-bg glass-panel p-8 rounded-[40px] w-full h-full flex flex-col gap-6 relative overflow-hidden shadow-2xl">
             <div class="music-controls flex justify-between items-center w-full">
                 <h2 class="text-4xl font-bold tracking-tight flex items-center gap-4">
                     <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
                     Media Hub
                 </h2>
                 <div class="flex gap-4">
-                    <button id="btn-minimize" class="interactable bg-white/10 hover:bg-white/20 w-20 h-20 rounded-full flex items-center justify-center border border-white/20">
-                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
+                    <button id="btn-minimize" class="interactable bg-white/10 hover:bg-white/20 w-24 h-24 rounded-full flex items-center justify-center border border-white/20">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
                     </button>
-                    <button id="btn-close" class="interactable bg-white/10 hover:bg-white/20 w-20 h-20 rounded-full flex items-center justify-center border border-white/20">
-                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button id="btn-close" class="interactable bg-white/10 hover:bg-white/20 w-24 h-24 rounded-full flex items-center justify-center border border-white/20">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
             </div>
@@ -359,8 +359,8 @@
                     <h2 id="intel-name" class="text-2xl font-bold mb-1">Sector Name</h2>
                     <p id="intel-category" class="text-xs font-bold text-blue-400 uppercase tracking-widest">Category</p>
                 </div>
-                <button id="btn-intel-close" class="interactable bg-white/10 hover:bg-white/20 w-12 h-12 rounded-full flex items-center justify-center border border-white/20">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button id="btn-intel-close" class="interactable bg-white/10 hover:bg-white/20 w-16 h-16 rounded-full flex items-center justify-center border border-white/20">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
@@ -389,8 +389,8 @@
     <div id="keyboard-overlay" class="absolute bottom-40 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-4 p-10 glass-panel rounded-[40px] w-[1100px] transition-all duration-300">
         <div class="flex justify-between items-center mb-2">
             <h2 class="text-xs font-bold opacity-50 uppercase tracking-widest">Neural Input Deck</h2>
-            <button id="btn-keyboard-close" class="interactable bg-red-500/20 hover:bg-red-500/40 w-14 h-14 rounded-full flex items-center justify-center border border-red-500/50 text-red-500">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button id="btn-keyboard-close" class="interactable bg-red-500/20 hover:bg-red-500/40 w-16 h-16 rounded-full flex items-center justify-center border border-red-500/50 text-red-500">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
@@ -412,8 +412,8 @@
         </div>
     </div>
 
-    <div id="mic-overlay" class="absolute bottom-40 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none transition-all duration-500 hidden opacity-0 flex flex-col items-center">
-        <div class="glass-panel px-8 py-6 rounded-[30px] flex flex-col items-center gap-4 min-w-[300px] border border-white/20 shadow-2xl bg-black/40">
+    <div id="mic-overlay" class="absolute bottom-44 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none transition-all duration-500 hidden opacity-0 flex flex-col items-center">
+        <div class="glass-panel px-5 py-3 rounded-[24px] flex flex-col items-center gap-2 min-w-[220px] border border-white/20 shadow-2xl bg-black/60 scale-90">
             <div class="flex items-center gap-4">
                 <div id="mic-indicator" class="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
                 <span id="mic-status" class="tracking-widest uppercase font-semibold text-center text-lg">Auto-Listening...</span>
@@ -470,6 +470,10 @@
 
     <div id="spatial-cursor" class="spatial-cursor"></div>
     <div id="spatial-cursor-ring" class="spatial-cursor-ring"></div>
+    
+    <!-- Right Eye Cursor for Cardboard Mode -->
+    <div id="spatial-cursor-right" class="spatial-cursor hidden"></div>
+    <div id="spatial-cursor-ring-right" class="spatial-cursor-ring hidden"></div>
     </div> <!-- End main-wrapper -->
 
     <script type="module" src="/static/js/main.js"></script>

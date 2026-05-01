@@ -177,24 +177,36 @@ export class MicAssistant {
 
     speak(text) {
         if (!window.speechSynthesis) return;
-        // Stop any current speech
         window.speechSynthesis.cancel();
         
         const utterance = new SpeechSynthesisUtterance(text);
-        const voices = window.speechSynthesis.getVoices();
         
-        // Target a female-sounding voice
-        const femaleVoice = voices.find(v => 
-            v.name.includes('Female') || 
-            v.name.includes('Google US English') || 
-            v.name.includes('Samantha') || 
-            v.name.includes('Victoria') ||
-            v.name.includes('Microsoft Zira')
-        );
-        
-        if (femaleVoice) utterance.voice = femaleVoice;
-        utterance.pitch = 1.15; 
-        utterance.rate = 1.0;
-        window.speechSynthesis.speak(utterance);
+        const trySpeak = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                // If voices aren't loaded yet, wait and try again
+                setTimeout(trySpeak, 100);
+                return;
+            }
+
+            // High-priority female voices
+            const femaleVoice = voices.find(v => 
+                v.name.includes('Google US English') || 
+                v.name.includes('Samantha') || 
+                v.name.includes('Zira') ||
+                v.name.includes('Female') ||
+                v.name.includes('Victoria')
+            );
+            
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+            }
+            
+            utterance.pitch = 1.1; 
+            utterance.rate = 1.05; // Slightly faster for tactical feel
+            window.speechSynthesis.speak(utterance);
+        };
+
+        trySpeak();
     }
 }

@@ -28,7 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const thumbTip = hand[4];
 
         // Map normalized coordinates (0-1) to screen pixels
-        const screenX = (1 - indexTip.x) * window.innerWidth;
+        // DYNAMIC SYNC: Flip coordinate ONLY if mirrored is active
+        let screenX;
+        if (settings.isMirrored) {
+            screenX = (1 - indexTip.x) * window.innerWidth;
+        } else {
+            screenX = indexTip.x * window.innerWidth;
+        }
+        
         const screenY = indexTip.y * window.innerHeight;
 
         ui.updateCursor(screenX, screenY);

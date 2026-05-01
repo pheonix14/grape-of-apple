@@ -2,6 +2,8 @@ export class UIController {
     constructor() {
         this.cursor = document.getElementById('spatial-cursor');
         this.cursorRing = document.getElementById('spatial-cursor-ring');
+        this.cursorRight = document.getElementById('spatial-cursor-right');
+        this.cursorRingRight = document.getElementById('spatial-cursor-ring-right');
         this.isPinching = false;
         this.hoveredElement = null;
         this.lastPinchTime = 0;
@@ -31,11 +33,39 @@ export class UIController {
     updateCursor(x, y) {
         this.currentX = x;
         this.currentY = y;
+        
+        // Primary Projection
         this.cursor.style.left = `${x}px`;
         this.cursor.style.top = `${y}px`;
         this.cursorRing.style.left = `${x}px`;
         this.cursorRing.style.top = `${y}px`;
         
+        // Secondary Projection (Right Eye)
+        if (this.cursorRight) {
+            const halfWidth = window.innerWidth / 2;
+            let xRight;
+            
+            if (x < halfWidth) {
+                xRight = x + halfWidth;
+            } else {
+                xRight = x - halfWidth;
+            }
+
+            this.cursorRight.style.left = `${xRight}px`;
+            this.cursorRight.style.top = `${y}px`;
+            this.cursorRingRight.style.left = `${xRight}px`;
+            this.cursorRingRight.style.top = `${y}px`;
+            
+            // Sync visibility with primary (only show if app-open)
+            if (document.body.classList.contains('app-open')) {
+                this.cursorRight.classList.remove('hidden');
+                this.cursorRingRight.classList.remove('hidden');
+            } else {
+                this.cursorRight.classList.add('hidden');
+                this.cursorRingRight.classList.add('hidden');
+            }
+        }
+
         this.checkHover(x, y);
         this.applyPanelTilt(x, y);
     }
@@ -55,6 +85,10 @@ export class UIController {
             this.isPinching = false;
             this.cursor.classList.remove('pinching');
             this.cursorRing.classList.remove('pinching');
+            if (this.cursorRight) {
+                this.cursorRight.classList.remove('pinching');
+                this.cursorRingRight.classList.remove('pinching');
+            }
             
             if (this.hoveredElement) {
                 this.hoveredElement.classList.remove('clicked');
