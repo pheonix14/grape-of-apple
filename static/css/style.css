@@ -1,0 +1,126 @@
+/* Custom Styles that go beyond Tailwind */
+:root {
+    --cursor-size: 16px;
+    --app-size: 64px; /* default w-16 */
+    --hover-scale: 1.25;
+    --camera-zoom: 1;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Connect CSS Variables to Tailwind elements dynamically */
+.app-icon-size {
+    width: var(--app-size) !important;
+    height: var(--app-size) !important;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.interactable.hovered {
+    transform: scale(var(--hover-scale)) translateY(-10px) !important;
+}
+
+#input_video, #output_canvas {
+    /* Scale X is -1 to mirror. We multiply zoom by -1 for X */
+    transform: scaleX(-1) scale(var(--camera-zoom));
+    transform-origin: center;
+    transition: transform 0.5s ease;
+}
+
+/* Spatial Cursor */
+.spatial-cursor {
+    position: absolute;
+    width: var(--cursor-size);
+    height: var(--cursor-size);
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    transition: transform 0.1s;
+}
+
+.spatial-cursor-ring {
+    position: absolute;
+    width: calc(var(--cursor-size) * 3);
+    height: calc(var(--cursor-size) * 3);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: all 0.15s ease-out;
+}
+
+.spatial-cursor.pinching {
+    transform: translate(-50%, -50%) scale(0.6);
+    background: #00ff88;
+    box-shadow: 0 0 15px #00ff88;
+}
+
+.spatial-cursor-ring.pinching {
+    width: calc(var(--cursor-size) * 1.5);
+    height: calc(var(--cursor-size) * 1.5);
+    border-color: #00ff88;
+}
+
+/* ============================
+   TRON Ares Theme 
+   ============================ */
+body.tron-ares {
+    background-color: #00040a;
+}
+
+/* Darken video in Tron Mode */
+body.tron-ares #input_video {
+    filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(140deg) saturate(2);
+}
+
+body.tron-ares .glass-panel {
+    background: rgba(0, 15, 20, 0.7) !important;
+    border: 1px solid #0ff !important;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1) !important;
+    color: #0ff !important;
+}
+
+body.tron-ares .interactable button {
+    background: rgba(0, 255, 255, 0.2) !important;
+    border: 1px solid #0ff;
+    color: #0ff;
+}
+
+/* Override all gradients to Tron style */
+body.tron-ares .bg-gradient-1, 
+body.tron-ares .bg-gradient-2, 
+body.tron-ares .bg-gradient-3, 
+body.tron-ares .bg-gradient-4, 
+body.tron-ares .bg-gradient-5, 
+body.tron-ares .bg-gradient-6, 
+body.tron-ares .bg-gradient-7 {
+    background: #000 !important;
+    border: 2px solid #0ff !important;
+    box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.8), 0 0 15px rgba(0, 255, 255, 0.8) !important;
+}
+
+body.tron-ares .interactable.hovered {
+    box-shadow: 0 0 30px #0ff !important;
+}
+
+body.tron-ares svg {
+    color: #0ff !important;
+    filter: drop-shadow(0 0 5px #0ff);
+}
+
+/* Music Player Minimized State */
+#music-player.minimized .music-bg { 
+    background: transparent !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    backdrop-filter: none !important; 
+    padding: 0 !important; 
+}
+#music-player.minimized .music-controls { 
+    display: none !important; 
+}

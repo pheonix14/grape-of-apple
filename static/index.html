@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>visionOS Web Clone - Full</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- MediaPipe Hands -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-panel {
+                @apply bg-transparent backdrop-blur-[50px] border border-white/10 shadow-2xl;
+            }
+            .interactable {
+                @apply transition-all duration-300 ease-out cursor-pointer;
+            }
+            .interactable.clicked {
+                @apply scale-95 opacity-80;
+            }
+            /* App Gradients */
+            .bg-gradient-1 { background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%); }
+            .bg-gradient-2 { background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); }
+            .bg-gradient-3 { background: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%); }
+            .bg-gradient-4 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            .bg-gradient-5 { background: linear-gradient(to right, #fa709a 0%, #fee140 100%); }
+            .bg-gradient-6 { background: linear-gradient(to top, #30cfd0 0%, #330867 100%); }
+            .bg-gradient-7 { background: linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%); }
+        }
+    </style>
+</head>
+<body class="w-screen h-screen overflow-hidden bg-black select-none text-white transition-colors duration-500">
+    <div class="absolute inset-0 z-0">
+        <video id="input_video" class="w-full h-full object-cover" autoplay playsinline></video>
+        <canvas id="output_canvas" class="absolute inset-0 w-full h-full z-10 pointer-events-none scale-x-[-1] opacity-30"></canvas>
+    </div>
+
+    <!-- Settings Button -->
+    <div class="absolute top-8 left-8 z-50 pointer-events-auto">
+        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/10" id="settings-btn">
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="absolute top-8 left-28 z-50 pointer-events-auto bg-transparent backdrop-blur-[50px] border border-white/10 px-8 py-3 rounded-full flex flex-row items-center gap-8 transition-all duration-300 opacity-0 -translate-x-4 pointer-events-none hidden">
+        <div class="flex items-center gap-3">
+            <span class="text-sm font-medium tracking-wide">Size</span>
+            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-size-down">-</button>
+            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-size-up">+</button>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm font-medium tracking-wide">Physics</span>
+            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-hover-down">-</button>
+            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-hover-up">+</button>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm font-medium tracking-wide">Zoom</span>
+            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-zoom-down">-</button>
+            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-zoom-up">+</button>
+        </div>
+        <div class="flex items-center gap-3 border-l border-white/20 pl-6">
+            <span class="text-sm font-bold tracking-wider text-[#0ff]">TRON ARES</span>
+            <div class="interactable w-12 h-6 bg-white/10 border border-white/20 rounded-full relative cursor-pointer" id="btn-theme-toggle">
+                <div class="w-6 h-6 bg-white rounded-full absolute left-0 shadow-md transition-transform duration-300" id="theme-toggle-knob"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Music Player Window -->
+    <div id="music-player" class="absolute top-1/4 left-1/2 transform -translate-x-1/2 z-40 pointer-events-auto flex flex-col items-center transition-all duration-500 hidden">
+        <div class="music-bg glass-panel p-6 rounded-[32px] w-96 flex flex-col gap-6 relative">
+            <div class="music-controls flex justify-between items-center w-full">
+                <h3 class="text-xl font-semibold tracking-wide">Music</h3>
+                <div class="flex gap-2">
+                    <button id="btn-min" class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <button id="btn-close" class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="music-controls flex flex-col gap-4 items-center">
+                <label class="interactable bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full cursor-pointer text-sm">
+                    Load Local File
+                    <input type="file" id="music-file-input" accept="audio/*" class="hidden">
+                </label>
+
+                <div class="flex gap-4 items-center justify-center mt-2">
+                    <button id="btn-play" class="interactable bg-white/20 hover:bg-white/30 w-12 h-12 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Visualizer always shows -->
+            <canvas id="visualizer-canvas" width="300" height="80" class="mt-2"></canvas>
+        </div>
+        <audio id="audio-element" class="hidden"></audio>
+    </div>
+
+    <!-- The Spatial UI: App Dock -->
+    <main class="absolute inset-0 z-20 flex flex-col justify-end items-center pb-12 pointer-events-none">
+        <div class="pointer-events-auto flex gap-6 px-10 py-5 rounded-[40px] glass-panel items-center justify-center">
+            <div class="interactable" data-app="photos">
+                <div class="app-icon-size rounded-full shadow-lg bg-gradient-1 border border-white/10"></div>
+            </div>
+            <div class="interactable" data-app="messages">
+                <div class="app-icon-size rounded-full shadow-lg bg-gradient-2 border border-white/10"></div>
+            </div>
+            <div class="interactable" data-app="mail">
+                <div class="app-icon-size rounded-full shadow-lg bg-gradient-3 border border-white/10"></div>
+            </div>
+            <div class="interactable" data-app="safari">
+                <div class="app-icon-size rounded-full shadow-lg bg-gradient-4 border border-white/10"></div>
+            </div>
+            <div class="interactable" data-app="music">
+                <div class="app-icon-size rounded-full shadow-lg bg-gradient-5 border border-white/10"></div>
+            </div>
+            <div class="interactable" data-app="tv">
+                <div class="app-icon-size rounded-full shadow-lg bg-gradient-6 border border-white/10"></div>
+            </div>
+            <!-- Map Icon -->
+            <div class="interactable relative" data-app="map">
+                <div class="app-icon-size rounded-full shadow-lg bg-gradient-7 border border-white/10 flex items-center justify-center">
+                    <svg class="w-1/2 h-1/2 text-white/80" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Hand Cursor -->
+    <div id="spatial-cursor" class="spatial-cursor"></div>
+    <div id="spatial-cursor-ring" class="spatial-cursor-ring"></div>
+
+    <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>
