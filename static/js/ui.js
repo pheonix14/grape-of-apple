@@ -45,17 +45,35 @@ export class UIController {
             const rect = el.getBoundingClientRect();
             if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
                 if (this.hoveredElement !== el) {
-                    if (this.hoveredElement) this.hoveredElement.classList.remove('hovered');
+                    if (this.hoveredElement) {
+                        this.hoveredElement.classList.remove('hovered');
+                        this.hoveredElement.style.transform = ''; // reset 3D
+                    }
                     this.hoveredElement = el;
                     el.classList.add('hovered');
                 }
                 foundHover = true;
+
+                // Apply 3D Parallax physics
+                const relX = ((x - rect.left) / rect.width) * 2 - 1;
+                const relY = ((y - rect.top) / rect.height) * 2 - 1;
+                const rotX = -relY * 30; // up/down tilt
+                const rotY = relX * 30; // left/right tilt
+                el.style.transform = `perspective(500px) scale(var(--hover-scale)) translateY(-10px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+
             } else {
-                el.classList.remove('hovered');
+                if (el.classList.contains('hovered') && this.hoveredElement !== el) {
+                    el.classList.remove('hovered');
+                    el.style.transform = ''; // reset 3D
+                }
             }
         });
 
         if (!foundHover) {
+            if (this.hoveredElement) {
+                this.hoveredElement.classList.remove('hovered');
+                this.hoveredElement.style.transform = ''; // reset
+            }
             this.hoveredElement = null;
         }
     }

@@ -1,112 +1,195 @@
 export class MusicPlayer {
     constructor() {
-        this.container = document.getElementById('music-player');
-        this.audio = document.getElementById('audio-element');
-        this.fileInput = document.getElementById('music-file-input');
-        this.canvas = document.getElementById('visualizer-canvas');
-        this.ctx = this.canvas.getContext('2d');
-        
-        this.btnPlay = document.getElementById('btn-play');
+        this.window = document.getElementById('music-player');
         this.btnMin = document.getElementById('btn-min');
         this.btnClose = document.getElementById('btn-close');
+        this.btnPlay = document.getElementById('btn-play');
+        this.btnLoop = document.getElementById('btn-loop');
+        this.fileInput = document.getElementById('music-file-input');
         
-        this.isMinimized = false;
+        this.ytInput = document.getElementById('yt-link-input');
+        this.ytLoadBtn = document.getElementById('btn-yt-load');
+        this.ytContainer = document.getElementById('yt-player-container');
+        this.ytIframe = document.getElementById('yt-iframe');
+        
+        this.canvas = document.getElementById('visualizer-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.audioElement = document.getElementById('audio-element');
+        
         this.audioContext = null;
         this.analyser = null;
         this.source = null;
-        
+        this.dataArray = null;
+        this.animationId = null;
+
+        this.isPlaying = false;
+        this.isMinimized = false;
+        this.isLooping = false;
+
         this.bindEvents();
     }
 
     bindEvents() {
-        // App icon click (from ui.js or main.js) to open
+        // App Icon click
         document.querySelector('[data-app="music"]').addEventListener('click', () => {
-            this.container.classList.remove('hidden');
+            this.window.classList.remove('hidden');
+            if (this.isMinimized) {
+                this.window.classList.remove('minimized');
+                this.isMinimized = false;
+            }
         });
 
+        // Close
         this.btnClose.addEventListener('click', () => {
-            this.container.classList.add('hidden');
-            this.audio.pause();
+            this.window.classList.add('hidden');
+            if (this.isPlaying) {
+                this.audioElement.pause();
+                this.isPlaying = false;
+                this.updatePlayBtn();
+            }
         });
 
+        // Minimize
         this.btnMin.addEventListener('click', () => {
             this.isMinimized = !this.isMinimized;
             if (this.isMinimized) {
-                this.container.classList.add('minimized');
+                this.window.classList.add('minimized');
             } else {
-                this.container.classList.remove('minimized');
+                this.window.classList.remove('minimized');
             }
         });
 
-        this.btnPlay.addEventListener('click', () => {
-            if (this.audio.paused) {
-                this.audio.play();
-                this.btnPlay.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
-                this.initAudioContext();
-            } else {
-                this.audio.pause();
-                this.btnPlay.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-            }
-        });
-
+        // Local File Input
         this.fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
+                // Hide YT iframe if active
+                this.ytContainer.classList.add('hidden');
+                this.canvas.classList.remove('hidden');
+                this.ytIframe.src = "";
+
                 const url = URL.createObjectURL(file);
-                this.audio.src = url;
-                this.audio.play();
-                this.btnPlay.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+                this.audioElement.src = url;
+                this.audioElement.load();
+                
                 this.initAudioContext();
+                this.audioElement.play();
+                this.isPlaying = true;
+                this.updatePlayBtn();
             }
         });
+
+        // YouTube Load Button
+        this.ytLoadBtn.addEventListener('click', () => {
+            const url = this.ytInput.value.trim();
+            if (url) {
+                // Try to extract video ID or Playlist ID
+                let embedUrl = "";
+                if (url.includes('youtube.com/watch?v=')) {
+                    const vidId = url.split('v=')[1].split('&')[0];
+                    embedUrl = `https://www.youtube.com/embed/${vidId}?autoplay=1`;
+                } else if (url.includes('youtu.be/')) {
+                    const vidId = url.split('youtu.be/')[1].split('?')[0];
+                    embedUrl = `https://www.youtube.com/embed/${vidId}?autoplay=1`;
+                } else if (url.includes('youtube.com/playlist?list=')) {
+                    const listId = url.split('list=')[1].split('&')[0];
+                    embedUrl = `https://www.youtube.com/embed/videoseries?list=${listId}&autoplay=1`;
+                } else {
+                    alert("Please enter a valid YouTube Video or Playlist URL.");
+                    return;
+                }
+
+                // Pause local audio
+                if (this.isPlaying) {
+                    this.audioElement.pause();
+                    this.isPlaying = false;
+                    this.updatePlayBtn();
+                }
+
+                // Show iframe, hide canvas
+                this.canvas.classList.add('hidden');
+                this.ytContainer.classList.remove('hidden');
+                this.ytIframe.src = embedUrl;
+            }
+        });
+
+        // Play/Pause Button
+        this.btnPlay.addEventListener('click', () => {
+            if (this.audioElement.src && !this.ytContainer.classList.contains('hidden') === false) {
+                if (this.isPlaying) {
+                    this.audioElement.pause();
+                } else {
+                    this.initAudioContext();
+                    this.audioElement.play();
+                }
+                this.isPlaying = !this.isPlaying;
+                this.updatePlayBtn();
+            }
+        });
+
+        // Loop Button
+        this.btnLoop.addEventListener('click', () => {
+            this.isLooping = !this.isLooping;
+            this.audioElement.loop = this.isLooping;
+            if (this.isLooping) {
+                this.btnLoop.classList.add('text-[#0ff]'); // highlight
+            } else {
+                this.btnLoop.classList.remove('text-[#0ff]');
+            }
+        });
+    }
+
+    updatePlayBtn() {
+        if (this.isPlaying) {
+            // Pause Icon
+            this.btnPlay.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+        } else {
+            // Play Icon
+            this.btnPlay.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+        }
     }
 
     initAudioContext() {
         if (!this.audioContext) {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.audioContext = new AudioContext();
             this.analyser = this.audioContext.createAnalyser();
-            this.source = this.audioContext.createMediaElementSource(this.audio);
+            this.analyser.fftSize = 256;
             
+            this.source = this.audioContext.createMediaElementSource(this.audioElement);
             this.source.connect(this.analyser);
             this.analyser.connect(this.audioContext.destination);
             
-            this.analyser.fftSize = 256;
-            this.bufferLength = this.analyser.frequencyBinCount;
-            this.dataArray = new Uint8Array(this.bufferLength);
+            const bufferLength = this.analyser.frequencyBinCount;
+            this.dataArray = new Uint8Array(bufferLength);
             
             this.draw();
-        }
-        
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
+        } else {
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
         }
     }
 
     draw() {
-        requestAnimationFrame(() => this.draw());
+        this.animationId = requestAnimationFrame(() => this.draw());
         
         this.analyser.getByteFrequencyData(this.dataArray);
         
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        const width = this.canvas.width;
-        const height = this.canvas.height;
-        const barWidth = (width / this.bufferLength) * 2.5;
+        const barWidth = (this.canvas.width / this.dataArray.length) * 2.5;
         let barHeight;
         let x = 0;
         
-        for (let i = 0; i < this.bufferLength; i++) {
+        for(let i = 0; i < this.dataArray.length; i++) {
             barHeight = this.dataArray[i] / 2;
             
-            // Tron style cyan or just generic white/glassy
-            const isTron = document.body.classList.contains('tron-ares');
-            if (isTron) {
-                this.ctx.fillStyle = `rgb(0, ${barHeight + 100}, 255)`;
-            } else {
-                this.ctx.fillStyle = `rgba(255, 255, 255, ${barHeight / 255})`;
-            }
+            // Neon cyan/blue styling
+            const hue = i * 2;
+            this.ctx.fillStyle = `hsl(${200 + hue}, 100%, 50%)`;
             
-            this.ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+            this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth, barHeight);
             x += barWidth + 1;
         }
     }

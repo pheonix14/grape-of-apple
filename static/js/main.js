@@ -2,6 +2,8 @@ import { UIController } from './ui.js';
 import { HandTracker } from './tracker.js';
 import { SettingsController } from './settings.js';
 import { MusicPlayer } from './music.js';
+import { MapController } from './map.js';
+import { MicAssistant } from './mic.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const videoElement = document.getElementById('input_video');
@@ -10,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const ui = new UIController();
     const settings = new SettingsController();
     const music = new MusicPlayer();
+    const map = new MapController();
+    const mic = new MicAssistant(map);
 
     // Initialize Hand Tracker with callback
     const tracker = new HandTracker(videoElement, (hand) => {
@@ -31,7 +35,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
         const PINCH_THRESHOLD = 0.05; 
-        ui.setPinching(distance < PINCH_THRESHOLD);
+        const isPinching = distance < PINCH_THRESHOLD;
+        ui.setPinching(isPinching);
+
+        // Pass hand state to map for swipe/drag navigation
+        map.handleHandGesture({
+            x: screenX,
+            y: screenY,
+            isPinching: isPinching,
+            pinchDistance: distance
+        });
     });
 
     // Start Webcam & Tracking

@@ -1,20 +1,27 @@
-/* Custom Styles that go beyond Tailwind */
 :root {
     --cursor-size: 16px;
-    --app-size: 64px; /* default w-16 */
+    --app-size: 64px;
     --hover-scale: 1.25;
     --camera-zoom: 1;
+    --text-size: 16px;
+    --app-border-color: rgba(255, 255, 255, 0.1);
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
+.dynamic-text {
+    font-size: var(--text-size);
+}
+
 /* Connect CSS Variables to Tailwind elements dynamically */
 .app-icon-size {
     width: var(--app-size) !important;
     height: var(--app-size) !important;
+    border-color: var(--app-border-color) !important;
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    transform-style: preserve-3d;
 }
 
 .interactable.hovered {
@@ -67,60 +74,51 @@ body {
 }
 
 /* ============================
-   TRON Ares Theme 
+   TRON Legacy (Blue Black)
    ============================ */
-body.tron-ares {
-    background-color: #00040a;
-}
+body.tron-legacy { background-color: #00040a; }
+body.tron-legacy #input_video { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(140deg) saturate(2); }
+body.tron-legacy .glass-panel { background: rgba(0, 15, 20, 0.7) !important; border: 1px solid #0ff !important; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1) !important; color: #0ff !important; }
+body.tron-legacy .interactable button { background: rgba(0, 255, 255, 0.2) !important; border: 1px solid #0ff; color: #0ff; }
+body.tron-legacy .bg-gradient-1, body.tron-legacy .bg-gradient-2, body.tron-legacy .bg-gradient-3, body.tron-legacy .bg-gradient-4, body.tron-legacy .bg-gradient-5, body.tron-legacy .bg-gradient-6, body.tron-legacy .bg-gradient-7, body.tron-legacy .bg-gradient-8 { background: #000 !important; border: 2px solid #0ff !important; box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.8), 0 0 15px rgba(0, 255, 255, 0.8) !important; }
+body.tron-legacy .interactable.hovered { box-shadow: 0 0 30px #0ff !important; }
+body.tron-legacy svg { color: #0ff !important; filter: drop-shadow(0 0 5px #0ff); }
 
-/* Darken video in Tron Mode */
-body.tron-ares #input_video {
-    filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(140deg) saturate(2);
-}
+/* ============================
+   TRON Ares (Red Black)
+   ============================ */
+body.tron-ares-rb { background-color: #0a0000; }
+body.tron-ares-rb #input_video { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(320deg) saturate(3); }
+body.tron-ares-rb .glass-panel { background: rgba(20, 0, 0, 0.7) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3), inset 0 0 10px rgba(255, 0, 60, 0.1) !important; color: #ff003c !important; }
+body.tron-ares-rb .interactable button { background: rgba(255, 0, 60, 0.2) !important; border: 1px solid #ff003c; color: #ff003c; }
+body.tron-ares-rb .bg-gradient-1, body.tron-ares-rb .bg-gradient-2, body.tron-ares-rb .bg-gradient-3, body.tron-ares-rb .bg-gradient-4, body.tron-ares-rb .bg-gradient-5, body.tron-ares-rb .bg-gradient-6, body.tron-ares-rb .bg-gradient-7, body.tron-ares-rb .bg-gradient-8 { background: #000 !important; border: 2px solid #ff003c !important; box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.8), 0 0 15px rgba(255, 0, 60, 0.8) !important; }
+body.tron-ares-rb .interactable.hovered { box-shadow: 0 0 30px #ff003c !important; }
+body.tron-ares-rb svg { color: #ff003c !important; filter: drop-shadow(0 0 5px #ff003c); }
 
-body.tron-ares .glass-panel {
-    background: rgba(0, 15, 20, 0.7) !important;
-    border: 1px solid #0ff !important;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1) !important;
-    color: #0ff !important;
-}
+/* ============================
+   TRON Ares (Red White)
+   ============================ */
+body.tron-ares-rw { background-color: #fdfdfd; color: #ff003c !important; }
+body.tron-ares-rw #input_video { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(330deg); }
+body.tron-ares-rw .glass-panel { background: rgba(255, 255, 255, 0.8) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: #ff003c !important; }
+body.tron-ares-rw .interactable button { background: rgba(255, 0, 60, 0.1) !important; border: 1px solid #ff003c; color: #ff003c; }
+body.tron-ares-rw .bg-gradient-1, body.tron-ares-rw .bg-gradient-2, body.tron-ares-rw .bg-gradient-3, body.tron-ares-rw .bg-gradient-4, body.tron-ares-rw .bg-gradient-5, body.tron-ares-rw .bg-gradient-6, body.tron-ares-rw .bg-gradient-7, body.tron-ares-rw .bg-gradient-8 { background: #fff !important; border: 2px solid #ff003c !important; box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.3), 0 0 15px rgba(255, 0, 60, 0.3) !important; }
+body.tron-ares-rw .interactable.hovered { box-shadow: 0 0 30px #ff003c !important; }
+body.tron-ares-rw svg { color: #ff003c !important; filter: drop-shadow(0 0 3px #ff003c); }
+body.tron-ares-rw .text-white { color: #ff003c !important; } /* Override tailwind text-white */
 
-body.tron-ares .interactable button {
-    background: rgba(0, 255, 255, 0.2) !important;
-    border: 1px solid #0ff;
-    color: #0ff;
-}
-
-/* Override all gradients to Tron style */
-body.tron-ares .bg-gradient-1, 
-body.tron-ares .bg-gradient-2, 
-body.tron-ares .bg-gradient-3, 
-body.tron-ares .bg-gradient-4, 
-body.tron-ares .bg-gradient-5, 
-body.tron-ares .bg-gradient-6, 
-body.tron-ares .bg-gradient-7 {
-    background: #000 !important;
-    border: 2px solid #0ff !important;
-    box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.8), 0 0 15px rgba(0, 255, 255, 0.8) !important;
-}
-
-body.tron-ares .interactable.hovered {
-    box-shadow: 0 0 30px #0ff !important;
-}
-
-body.tron-ares svg {
-    color: #0ff !important;
-    filter: drop-shadow(0 0 5px #0ff);
-}
+/* ============================
+   TRON Ares (Blue White)
+   ============================ */
+body.tron-ares-bw { background-color: #f8fafc; color: #0284c7 !important; }
+body.tron-ares-bw #input_video { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(200deg); }
+body.tron-ares-bw .glass-panel { background: rgba(255, 255, 255, 0.8) !important; border: 1px solid #0284c7 !important; box-shadow: 0 0 20px rgba(2, 132, 199, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: #0284c7 !important; }
+body.tron-ares-bw .interactable button { background: rgba(2, 132, 199, 0.1) !important; border: 1px solid #0284c7; color: #0284c7; }
+body.tron-ares-bw .bg-gradient-1, body.tron-ares-bw .bg-gradient-2, body.tron-ares-bw .bg-gradient-3, body.tron-ares-bw .bg-gradient-4, body.tron-ares-bw .bg-gradient-5, body.tron-ares-bw .bg-gradient-6, body.tron-ares-bw .bg-gradient-7, body.tron-ares-bw .bg-gradient-8 { background: #fff !important; border: 2px solid #0284c7 !important; box-shadow: inset 0 0 15px rgba(2, 132, 199, 0.3), 0 0 15px rgba(2, 132, 199, 0.3) !important; }
+body.tron-ares-bw .interactable.hovered { box-shadow: 0 0 30px #0284c7 !important; }
+body.tron-ares-bw svg { color: #0284c7 !important; filter: drop-shadow(0 0 3px #0284c7); }
+body.tron-ares-bw .text-white { color: #0284c7 !important; } /* Override tailwind text-white */
 
 /* Music Player Minimized State */
-#music-player.minimized .music-bg { 
-    background: transparent !important; 
-    border: none !important; 
-    box-shadow: none !important; 
-    backdrop-filter: none !important; 
-    padding: 0 !important; 
-}
-#music-player.minimized .music-controls { 
-    display: none !important; 
-}
+#music-player.minimized .music-bg { background: transparent !important; border: none !important; box-shadow: none !important; backdrop-filter: none !important; padding: 0 !important; }
+#music-player.minimized .music-controls { display: none !important; }
