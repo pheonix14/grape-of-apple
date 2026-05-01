@@ -1,6 +1,7 @@
 import { UIController } from './ui.js';
 import { HandTracker } from './tracker.js';
 import { SettingsController } from './settings.js';
+import { CardboardController } from './cardboard.js';
 import { MusicPlayer } from './music.js';
 import { MapController } from './map.js';
 import { MicAssistant } from './mic.js';
@@ -12,6 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Controllers
     const ui = new UIController();
     const settings = new SettingsController();
+    const cardboard = new CardboardController();
+        
     const map = new MapController(settings);
     window.mapController = map; // Expose for popup interactions
     const music = new MusicPlayer(settings); 

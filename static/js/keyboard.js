@@ -15,6 +15,10 @@ export class VirtualKeyboard {
         };
 
         this.bindEvents();
+        
+        // Close button
+        const closeBtn = document.getElementById('btn-keyboard-close');
+        if (closeBtn) closeBtn.addEventListener('click', () => this.close());
     }
 
     bindEvents() {
@@ -53,7 +57,7 @@ export class VirtualKeyboard {
         const set = this.layouts[this.currentSet];
         set.forEach(key => {
             const btn = document.createElement('button');
-            btn.className = 'interactable bg-white/10 py-3 rounded-xl hover:bg-white/20 font-medium uppercase';
+            btn.className = 'interactable bg-white/10 py-10 rounded-2xl hover:bg-white/20 font-bold text-3xl uppercase';
             btn.innerText = key;
             btn.setAttribute('data-key', key);
             this.keysContainer.appendChild(btn);

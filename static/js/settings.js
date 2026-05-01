@@ -12,10 +12,11 @@ export class SettingsController {
         this.textSize = 16; 
         this.panelScale = 1.0;
         
-        // Themes: 0=Default, 1=Tron Cyan, 2=Tron Red
         this.themeState = 0;
+        this.isMirrored = true; 
 
         this.bindEvents();
+        this.updateStyles(); // Ensure variables are set on boot
     }
 
     bindEvents() {
@@ -82,6 +83,13 @@ export class SettingsController {
             document.body.classList.remove(...allThemes);
             document.body.classList.add('tron-ares-bw');
         });
+
+        // Mirror Toggle
+        document.getElementById('btn-mirror-toggle').addEventListener('click', () => {
+            this.isMirrored = !this.isMirrored;
+            console.log("🔄 Mirror Toggled:", this.isMirrored);
+            this.updateStyles();
+        });
     }
 
     togglePanel() {
@@ -105,6 +113,7 @@ export class SettingsController {
         document.documentElement.style.setProperty('--app-size', `${this.appSize}px`);
         document.documentElement.style.setProperty('--panel-scale', `${this.panelScale}`);
         document.documentElement.style.setProperty('--text-size', `${this.textSize}px`);
+        document.documentElement.style.setProperty('--mirror-scale', this.isMirrored ? '-1' : '1');
     }
 
     // Helper to set app-open state

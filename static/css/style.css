@@ -8,6 +8,16 @@
     --app-border-color: rgba(255, 255, 255, 0.1);
     --text-primary: #ffffff;
     --panel-bg: rgba(255, 255, 255, 0.1);
+    --ipd-offset: 0px;
+    --v-offset: 0px;
+    --view-scale: 1;
+    --mirror-scale: -1;
+}
+
+.crosshair-pointer {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
 }
 
 body {
@@ -23,7 +33,7 @@ body {
 
 /* Ensure all interactive text scales */
 .interactable, .glass-panel, input, button, span, h2, h3, div {
-    font-size: inherit;
+    font-size: 1em;
 }
 
 .sidebar-toolbar {
@@ -67,8 +77,8 @@ body.app-open .sidebar-toolbar:hover {
 }
 
 #input_video, #output_canvas {
-    /* Scale X is -1 to mirror. We multiply zoom by -1 for X */
-    transform: scaleX(-1) scale(var(--camera-zoom));
+    /* Scale X for mirror. We multiply zoom by the mirror-scale */
+    transform: scaleX(var(--mirror-scale)) scale(var(--camera-zoom));
     transform-origin: center;
     transition: transform 0.5s ease;
 }
@@ -211,4 +221,37 @@ body.tron-ares-bw .text-white, body.tron-ares-bw span, body.tron-ares-bw h2, bod
     display: block; width: 100%; padding: 10px; margin-top: 8px;
     text-align: center; text-decoration: none; font-family: 'Syncopate';
     font-size: 10px; border-radius: 3px; transition: 0.3s; cursor: pointer; border: none;
+}
+
+/* --- CARDBOARD STEREOSCOPIC MODE (Lensless Optimization) --- */
+body.cardboard-mode {
+    display: flex !important;
+    width: 200vw !important;
+    margin-left: -50vw !important;
+    overflow: hidden;
+    background: #000;
+}
+
+body.cardboard-mode #main-viewport, 
+body.cardboard-mode .sidebar-toolbar,
+body.cardboard-mode #settings-panel,
+body.cardboard-mode #map-window {
+    /* These will be handled by the eyeview duplication logic if needed, 
+       but for now we'll use a single-viewport shift trick for simplicity */
+}
+
+.eye-viewport {
+    width: 50vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.left-eye {
+    transform: translateX(calc(-1 * var(--ipd-offset))) translateY(var(--v-offset)) scale(var(--view-scale));
+}
+
+.right-eye {
+    transform: translateX(var(--ipd-offset)) translateY(var(--v-offset)) scale(var(--view-scale));
 }

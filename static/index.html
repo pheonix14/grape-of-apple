@@ -38,30 +38,67 @@
             .bg-gradient-1 { background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%); }
             .bg-gradient-2 { background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); }
             .bg-gradient-4 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            
+            /* --- NEON NODES --- */
+            .star-node {
+                display: flex; justify-content: center; align-items: center;
+                background: #ff003c; width: 14px; height: 14px; border-radius: 50%;
+                box-shadow: 0 0 15px #ff003c; border: 2px solid white;
+                animation: pulse-star 2s infinite ease-in-out;
+            }
+            @keyframes pulse-star {
+                0%, 100% { transform: scale(1) !important; opacity: 1; box-shadow: 0 0 15px #ff003c; }
+                50% { transform: scale(1.4) !important; opacity: 0.7; box-shadow: 0 0 25px #ff003c; }
+            }
+            
+            .crosshair-pointer {
+                position: absolute; top: 50%; left: 50%;
+                transform: translate(-50%, -50%) !important;
+                width: 40px; height: 40px;
+                border: 2px solid #ff003c; border-radius: 50%;
+                z-index: 1001; pointer-events: none;
+                display: none;
+            }
+            .crosshair-pointer::before, .crosshair-pointer::after {
+                content: ''; position: absolute; background: #ff003c;
+            }
+            .crosshair-pointer::before { width: 2px; height: 20px; top: -10px; left: 19px; }
+            .crosshair-pointer::after { width: 20px; height: 2px; top: 19px; left: -10px; }
+            .crosshair-pointer.active { display: block; animation: pulse-crosshair 1s infinite; }
+            @keyframes pulse-crosshair {
+                0%, 100% { transform: translate(-50%, -50%) scale(1) !important; opacity: 1; }
+                50% { transform: translate(-50%, -50%) scale(1.1) !important; opacity: 0.8; }
+            }
+            #input_video, #output_canvas {
+                /* Scale X for mirror. We multiply zoom by the mirror-scale */
+                transform: scaleX(var(--mirror-scale)) scale(var(--camera-zoom)) !important;
+                transform-origin: center;
+                transition: transform 0.5s ease;
+            }
         }
     </style>
 </head>
 <body class="w-screen h-screen overflow-hidden bg-black select-none text-white transition-colors duration-500 dynamic-text tron-ares-bw">
     <div class="absolute inset-0 z-0">
         <video id="input_video" class="w-full h-full object-cover" autoplay playsinline></video>
-        <canvas id="output_canvas" class="absolute inset-0 w-full h-full z-10 pointer-events-none scale-x-[-1] opacity-30"></canvas>
+        <canvas id="output_canvas" class="absolute inset-0 w-full h-full z-10 pointer-events-none opacity-30"></canvas>
     </div>
 
     <!-- Left Sidebar Toolbar -->
     <div class="sidebar-toolbar absolute top-1/2 -translate-y-1/2 left-8 z-50 pointer-events-auto flex flex-col gap-6 transition-all duration-500 origin-left">
-        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20" id="fullscreen-btn" title="Toggle Fullscreen">
+        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size" id="fullscreen-btn" title="Toggle Fullscreen">
             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
         </div>
-        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20" id="settings-btn" title="Control Center">
+        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size" id="settings-btn" title="Control Center">
             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         </div>
-        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20" data-app="music" title="Music Player">
+        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size" data-app="music" title="Music Player">
             <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
         </div>
-        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20" data-app="mic" id="btn-mic-toggle" title="Voice Search">
+        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size" data-app="mic" id="btn-mic-toggle" title="Voice Search">
             <svg class="w-7 h-7 text-white" id="mic-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
         </div>
-        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20" data-app="map" title="Spatial Map">
+        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size" data-app="map" title="Spatial Map">
             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
         </div>
     </div>
@@ -93,6 +130,23 @@
                     <div class="flex gap-2">
                         <button id="btn-text-down" class="interactable flex-1 h-16 bg-white/10 hover:bg-white/20 rounded-2xl text-2xl font-bold">-</button>
                         <button id="btn-text-up" class="interactable flex-1 h-16 bg-white/10 hover:bg-white/20 rounded-2xl text-2xl font-bold">+</button>
+                    </div>
+                </div>
+
+                <!-- Mirror Toggle -->
+                <div class="col-span-2 flex flex-col gap-3 p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <span class="text-xs font-bold uppercase tracking-widest text-white/50">Neural Mirroring</span>
+                    <button id="btn-mirror-toggle" class="interactable w-full h-16 bg-white/10 hover:bg-white/20 rounded-2xl font-bold uppercase tracking-widest">Flip Feed (Mirror)</button>
+                </div>
+
+                <!-- Cardboard Mode -->
+                <div class="col-span-2 flex flex-col gap-4 p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <span class="text-xs font-bold uppercase tracking-widest text-white/50">Stereoscopic AR (Cardboard)</span>
+                    <div class="flex gap-2">
+                        <button id="btn-cardboard-toggle" class="interactable flex-[2] h-16 bg-white/10 hover:bg-white/20 rounded-2xl font-bold uppercase">Toggle Mode</button>
+                        <button id="btn-cardboard-config" class="interactable flex-1 h-16 bg-blue-500/20 hover:bg-blue-500/30 rounded-2xl flex items-center justify-center border border-blue-500/30">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        </button>
                     </div>
                 </div>
 
@@ -215,28 +269,7 @@
             <!-- Real-time Search Results Overlay -->
             <div id="map-search-results" class="absolute top-24 left-6 z-[1000] w-72 flex flex-col gap-2 pointer-events-auto max-h-[50%] overflow-y-auto scrollbar-hide hidden"></div>
             
-            <!-- Tactical Intel Panel (Right Side) -->
-            <div id="tactical-intel" class="absolute top-24 right-6 z-[1000] w-96 flex flex-col gap-4 pointer-events-auto max-h-[80%] overflow-y-auto scrollbar-hide hidden">
-                <div class="glass-panel p-6 rounded-[32px] border-blue-400/30 bg-blue-400/5 backdrop-blur-xl">
-                    <h2 id="intel-name" class="text-2xl font-bold mb-1">Sector Name</h2>
-                    <p id="intel-category" class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">Category</p>
-                    
-                    <div class="flex flex-col gap-6">
-                        <section id="intel-stories-section">
-                            <h3 class="text-xs font-bold opacity-50 uppercase tracking-widest mb-2">Tactical Lore</h3>
-                            <div id="intel-stories" class="flex flex-col gap-2"></div>
-                        </section>
-                        <section id="intel-reviews-section">
-                            <h3 class="text-xs font-bold opacity-50 uppercase tracking-widest mb-2">SITREPs (Reviews)</h3>
-                            <div id="intel-reviews" class="flex flex-col gap-2"></div>
-                        </section>
-                        <section id="intel-reports-section">
-                            <h3 class="text-xs font-bold opacity-50 uppercase tracking-widest mb-2">Transport Logistics</h3>
-                            <div id="intel-reports" class="flex flex-col gap-2"></div>
-                        </section>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Route Options List -->
             <div id="route-list" class="absolute top-24 left-6 z-[999] w-72 flex flex-col gap-2 pointer-events-auto max-h-[60%] overflow-y-auto scrollbar-hide"></div>
@@ -264,26 +297,73 @@
             <button id="btn-map-clear" title="Clear All Markers" class="interactable bg-black/60 text-red-400 hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
+            <button id="btn-map-stop" title="Stop Navigation" class="interactable bg-red-600/40 text-white hover:bg-red-600/60 w-20 h-16 rounded-2xl flex items-center justify-center border border-red-500/50 hidden">
+                <span class="font-bold text-xs uppercase tracking-widest">STOP</span>
+            </button>
+            <button id="btn-map-minimize" title="Minimize Map" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Tactical Intel Panel (Right Side) - Isolated for Persistence -->
+    <div id="tactical-intel" class="absolute top-24 right-6 z-[2000] w-96 flex flex-col gap-4 pointer-events-auto max-h-[80%] overflow-y-auto scrollbar-hide hidden">
+        <div class="glass-panel p-6 rounded-[32px] border-blue-400/30 bg-blue-400/5 backdrop-blur-xl flex flex-col">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex flex-col">
+                    <h2 id="intel-name" class="text-2xl font-bold mb-1">Sector Name</h2>
+                    <p id="intel-category" class="text-xs font-bold text-blue-400 uppercase tracking-widest">Category</p>
+                </div>
+                <button id="btn-intel-close" class="interactable bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center border border-white/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex flex-col gap-6 mt-4 mb-6">
+                <section id="intel-stories-section">
+                    <h3 class="text-xs font-bold opacity-50 uppercase tracking-widest mb-2">Tactical Lore</h3>
+                    <div id="intel-stories" class="flex flex-col gap-2"></div>
+                </section>
+                <section id="intel-reviews-section">
+                    <h3 class="text-xs font-bold opacity-50 uppercase tracking-widest mb-2">Visitor SITREPs</h3>
+                    <div id="intel-reviews" class="flex flex-col gap-2"></div>
+                </section>
+                <section id="intel-reports-section">
+                    <h3 class="text-xs font-bold opacity-50 uppercase tracking-widest mb-2">Transport Logistics</h3>
+                    <div id="intel-reports" class="flex flex-col gap-2"></div>
+                </section>
+            </div>
+
+            <button id="btn-intel-destination" class="interactable w-full py-4 bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/50 rounded-2xl font-bold text-blue-400 tracking-widest uppercase text-sm mt-auto">
+                Set Destination
+            </button>
         </div>
     </div>
 
     <!-- Virtual Keyboard Overlay -->
-    <div id="keyboard-overlay" class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-2 p-6 glass-panel rounded-[32px] w-[800px] transition-all duration-300">
+    <div id="keyboard-overlay" class="absolute bottom-40 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-4 p-10 glass-panel rounded-[40px] w-[1100px] transition-all duration-300">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xs font-bold opacity-50 uppercase tracking-widest">Neural Input Deck</h2>
+            <button id="btn-keyboard-close" class="interactable bg-red-500/20 hover:bg-red-500/40 w-12 h-12 rounded-full flex items-center justify-center border border-red-500/50 text-red-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
         <!-- Input Display -->
-        <div id="keyboard-display" class="bg-white/10 px-6 py-3 rounded-2xl text-xl tracking-wide border border-white/20 min-h-[50px] flex items-center"></div>
+        <div id="keyboard-display" class="bg-white/10 px-8 py-5 rounded-2xl text-3xl tracking-widest border border-white/20 min-h-[80px] flex items-center font-bold"></div>
         
         <!-- Keys -->
-        <div id="keyboard-keys" class="grid grid-cols-10 gap-2 mt-4">
+        <div id="keyboard-keys" class="grid grid-cols-10 gap-3 mt-4">
             <!-- Keys injected by JS -->
         </div>
         
         <!-- Bottom Row -->
-        <div class="flex gap-2 mt-2">
-            <button class="interactable flex-1 bg-white/10 py-4 rounded-xl font-bold" data-key="switch-123">123</button>
-            <button class="interactable flex-1 bg-white/10 py-4 rounded-xl font-bold" data-key="switch-sym">#+=</button>
-            <button class="interactable flex-[4] bg-white/10 py-4 rounded-xl" data-key=" ">Space</button>
-            <button class="interactable flex-1 bg-red-500/20 py-4 rounded-xl text-red-500" data-key="backspace">⌫</button>
-            <button class="interactable flex-1 bg-blue-500/20 py-4 rounded-xl text-blue-500" data-key="enter">GO</button>
+        <div class="flex gap-3 mt-4">
+            <button class="interactable flex-1 bg-white/10 py-6 rounded-2xl font-bold text-xl" data-key="switch-123">123</button>
+            <button class="interactable flex-1 bg-white/10 py-6 rounded-2xl font-bold text-xl" data-key="switch-sym">#+=</button>
+            <button class="interactable flex-[4] bg-white/10 py-6 rounded-2xl text-xl font-bold" data-key=" ">SPACE</button>
+            <button class="interactable flex-1 bg-red-500/20 py-6 rounded-2xl text-red-500 text-2xl font-bold" data-key="backspace">⌫</button>
+            <button class="interactable flex-1 bg-blue-500/20 py-6 rounded-2xl text-blue-500 text-xl font-bold" data-key="enter">GO</button>
         </div>
     </div>
 
@@ -294,6 +374,48 @@
                 <span id="mic-status" class="tracking-widest uppercase font-semibold text-center text-lg">Auto-Listening...</span>
             </div>
             <div id="mic-options" class="w-full text-left hidden flex flex-col gap-2 mt-2 pt-4 border-t border-white/20 text-md text-white/90"></div>
+        </div>
+    </div>
+
+    <!-- Cardboard Calibration Panel -->
+    <div id="cardboard-panel" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[3000] w-[500px] glass-panel p-10 rounded-[40px] hidden opacity-0 transition-all duration-300">
+        <div class="flex flex-col gap-8">
+            <div class="flex justify-between items-center">
+                <h2 class="text-3xl font-bold tracking-tight text-blue-400">AR Box Config</h2>
+                <button id="btn-cardboard-panel-close" class="interactable bg-white/10 hover:bg-white/20 w-12 h-12 rounded-full flex items-center justify-center border border-white/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-6">
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold uppercase tracking-widest opacity-60">Eye Separation (IPD)</span>
+                        <span id="val-ipd" class="text-blue-400 font-bold">0px</span>
+                    </div>
+                    <input type="range" id="range-ipd" min="-100" max="100" value="0" class="w-full accent-blue-500">
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold uppercase tracking-widest opacity-60">Vertical Offset</span>
+                        <span id="val-voff" class="text-blue-400 font-bold">0px</span>
+                    </div>
+                    <input type="range" id="range-voff" min="-50" max="50" value="0" class="w-full accent-blue-500">
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold uppercase tracking-widest opacity-60">View Scale</span>
+                        <span id="val-vscale" class="text-blue-400 font-bold">1.0</span>
+                    </div>
+                    <input type="range" id="range-vscale" min="0.5" max="1.5" step="0.05" value="1.0" class="w-full accent-blue-500">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4 p-4 bg-blue-500/5 rounded-3xl border border-blue-500/20 text-xs text-blue-300/60 leading-relaxed italic">
+                Adjust these settings until the dual viewports align perfectly with your eyes when using the AR box.
+            </div>
         </div>
     </div>
 
