@@ -1,0 +1,16 @@
+[package]
+name = "acer/spatial-os-grape"
+version = "0.1.0"
+description = "Spatial OS Interface"
+
+[[command]]
+name = "web"
+module = "main:app"
+runner = "https://github.com/wasmerio/python-package-runner"
+
+[command.annotations]
+python = { requirements = ["fastapi", "uvicorn", "gunicorn"] }
+
+[fs]
+"/static" = "static"
+"/main.py" = "main.py"

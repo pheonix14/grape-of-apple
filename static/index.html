@@ -64,28 +64,65 @@
     </div>
 
     <!-- Settings Panel -->
-    <div id="settings-panel" class="absolute top-8 left-28 z-50 pointer-events-auto bg-transparent backdrop-blur-[50px] border border-white/10 px-6 py-3 rounded-[30px] flex flex-row items-center gap-6 transition-all duration-300 opacity-0 -translate-x-4 pointer-events-none hidden origin-left">
-        <div class="flex items-center gap-2">
-            <span class="font-medium tracking-wide whitespace-nowrap text-xs">Border</span>
-            <input type="color" id="border-color-picker" value="#ffffff" class="w-6 h-6 rounded-full border-none outline-none cursor-pointer bg-transparent">
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="font-medium tracking-wide whitespace-nowrap text-xs">Panel Size</span>
-            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-size-down">-</button>
-            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-size-up">+</button>
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="font-medium tracking-wide whitespace-nowrap text-xs">Text</span>
-            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-text-down">-</button>
-            <button class="interactable bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center" id="btn-text-up">+</button>
-        </div>
-        <div class="flex items-center gap-2 border-l border-white/20 pl-4">
-            <span class="font-bold tracking-wider text-[10px] uppercase opacity-70">Theme</span>
-            <button class="interactable bg-white/10 hover:bg-white/20 px-2 py-1 rounded-full text-[10px]" id="btn-theme-normal">Normal</button>
-            <button class="interactable bg-[#0ff]/20 hover:bg-[#0ff]/40 border border-[#0ff] text-[#0ff] px-2 py-1 rounded-full text-[10px]" id="btn-theme-legacy">B/BLK</button>
-            <button class="interactable bg-[#ff003c]/20 hover:bg-[#ff003c]/40 border border-[#ff003c] text-[#ff003c] px-2 py-1 rounded-full text-[10px]" id="btn-theme-ares-rb">R/BLK</button>
-            <button class="interactable bg-white/80 hover:bg-white border border-[#ff003c] text-[#ff003c] px-2 py-1 rounded-full text-[10px] font-bold" id="btn-theme-ares-rw">R/WHT</button>
-            <button class="interactable bg-white/80 hover:bg-white border border-[#0284c7] text-[#0284c7] px-2 py-1 rounded-full text-[10px] font-bold" id="btn-theme-ares-bw">B/WHT</button>
+    <div id="settings-panel" class="absolute top-1/2 left-32 -translate-y-1/2 z-50 w-[450px] glass-panel p-8 rounded-[40px] opacity-0 -translate-x-4 pointer-events-none transition-all duration-300 shadow-2xl">
+        <div class="flex flex-col gap-8">
+            <div class="flex justify-between items-center">
+                <h2 class="text-3xl font-bold tracking-tight">Control Center</h2>
+                <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                </div>
+            </div>
+
+            <!-- Settings Grid -->
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Panel Size -->
+                <div class="flex flex-col gap-3 p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <span class="text-xs font-bold uppercase tracking-widest text-white/50">Display Scale</span>
+                    <div class="flex gap-2">
+                        <button id="btn-size-down" class="interactable flex-1 h-16 bg-white/10 hover:bg-white/20 rounded-2xl text-2xl font-bold">-</button>
+                        <button id="btn-size-up" class="interactable flex-1 h-16 bg-white/10 hover:bg-white/20 rounded-2xl text-2xl font-bold">+</button>
+                    </div>
+                </div>
+
+                <!-- Text Size -->
+                <div class="flex flex-col gap-3 p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <span class="text-xs font-bold uppercase tracking-widest text-white/50">Text Size</span>
+                    <div class="flex gap-2">
+                        <button id="btn-text-down" class="interactable flex-1 h-16 bg-white/10 hover:bg-white/20 rounded-2xl text-2xl font-bold">-</button>
+                        <button id="btn-text-up" class="interactable flex-1 h-16 bg-white/10 hover:bg-white/20 rounded-2xl text-2xl font-bold">+</button>
+                    </div>
+                </div>
+
+                <!-- Appearance / Themes -->
+                <div class="col-span-2 flex flex-col gap-4 p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <span class="text-xs font-bold uppercase tracking-widest text-white/50">Appearance Themes</span>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button id="btn-theme-normal" class="interactable h-20 bg-white/10 hover:bg-white/20 rounded-2xl flex flex-col items-center justify-center gap-1">
+                            <div class="w-4 h-4 rounded-full bg-white/80"></div>
+                            <span class="text-[10px] font-bold">Normal</span>
+                        </button>
+                        <button id="btn-theme-legacy" class="interactable h-20 bg-cyan-500/20 hover:bg-cyan-500/30 rounded-2xl flex flex-col items-center justify-center gap-1 border border-cyan-500/30">
+                            <div class="w-4 h-4 rounded-full bg-cyan-400"></div>
+                            <span class="text-[10px] font-bold">Legacy</span>
+                        </button>
+                        <button id="btn-theme-ares-rb" class="interactable h-20 bg-red-600/20 hover:bg-red-600/30 rounded-2xl flex flex-col items-center justify-center gap-1 border border-red-600/30">
+                            <div class="w-4 h-4 rounded-full bg-red-500"></div>
+                            <span class="text-[10px] font-bold">Ares RB</span>
+                        </button>
+                        <button id="btn-theme-ares-rw" class="interactable h-20 bg-red-100/10 hover:bg-red-100/20 rounded-2xl flex flex-col items-center justify-center gap-1 border border-red-400/30">
+                            <div class="w-4 h-4 rounded-full bg-white border border-red-500"></div>
+                            <span class="text-[10px] font-bold">Ares RW</span>
+                        </button>
+                        <button id="btn-theme-ares-bw" class="interactable h-20 bg-blue-100/10 hover:bg-blue-100/20 rounded-2xl flex flex-col items-center justify-center gap-1 border border-blue-400/30">
+                            <div class="w-4 h-4 rounded-full bg-white border border-blue-500"></div>
+                            <span class="text-[10px] font-bold">Ares BW</span>
+                        </button>
+                        <div class="flex items-center justify-center p-2 bg-white/5 rounded-2xl">
+                             <input type="color" id="border-color-picker" class="w-full h-full bg-transparent cursor-pointer interactable">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -163,28 +200,46 @@
             </div>
 
             <div id="map-container" class="w-full h-full rounded-[36px] overflow-hidden"></div>
+            
+            <!-- Route Info Overlay (Bottom Left) -->
+            <div id="map-route-info" class="absolute bottom-6 left-6 z-[999] pointer-events-none hidden">
+                <div class="bg-black/60 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-xl flex flex-col gap-1 min-w-[200px]">
+                    <div class="text-white/60 text-xs font-bold uppercase tracking-widest">Route Info</div>
+                    <div id="route-distance" class="text-white text-2xl font-bold">-- km</div>
+                    <div id="route-time" class="text-blue-400 text-lg">-- min</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Big Controls (Outside Map Panel - Floating on Right) -->
-        <div class="absolute top-1/2 -translate-y-1/2 right-6 z-[1000] flex flex-col gap-4">
-            <button id="btn-map-zoom-in" class="interactable bg-black/80 backdrop-blur text-white hover:bg-white/20 w-24 h-20 rounded-3xl flex items-center justify-center shadow-2xl border border-white/30 text-4xl font-bold">+</button>
-            <button id="btn-map-zoom-out" class="interactable bg-black/80 backdrop-blur text-white hover:bg-white/20 w-24 h-20 rounded-3xl flex items-center justify-center shadow-2xl border border-white/30 text-4xl font-bold">-</button>
-            <button id="btn-map-locate" title="Locate Me" class="interactable bg-black/80 backdrop-blur text-white hover:bg-white/20 w-24 h-20 rounded-3xl flex items-center justify-center shadow-2xl border border-white/30">
-                <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <!-- Big Controls (Outside Map Panel - Top Center Bar) -->
+        <div class="absolute top-8 left-1/2 -translate-x-1/2 z-[1000] flex flex-row gap-4 bg-black/40 backdrop-blur-md p-2 rounded-[32px] border border-white/10 shadow-2xl">
+            <button id="btn-map-zoom-in" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20 text-3xl font-bold">+</button>
+            <button id="btn-map-zoom-out" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20 text-3xl font-bold">-</button>
+            <button id="btn-map-locate" title="Locate Me" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
             </button>
-            <button id="btn-map-marker" title="Place Marker" class="interactable bg-black/80 backdrop-blur text-white hover:bg-white/20 w-24 h-20 rounded-3xl flex items-center justify-center shadow-2xl border border-white/30">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <button id="btn-map-marker" title="Place Marker" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             </button>
-            <button id="btn-map-clear" title="Clear All Markers" class="interactable bg-black/80 backdrop-blur text-white hover:bg-white/20 w-24 h-20 rounded-3xl flex items-center justify-center shadow-2xl border border-white/30 text-red-500">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <button id="btn-map-clear" title="Clear All Markers" class="interactable bg-black/60 text-red-400 hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+            <button id="btn-map-alt" title="Alternative Route" class="interactable bg-black/60 text-blue-400 hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20 hidden">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
             </button>
         </div>
     </div>
 
     <!-- Virtual Keyboard Overlay -->
-    <div id="keyboard-overlay" class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-2 p-6 glass-panel rounded-[32px] w-[800px] transition-all duration-300">
+    <div id="keyboard-overlay" class="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-4 p-10 glass-panel rounded-[40px] w-[1100px] transition-all duration-300 shadow-2xl">
+        <div class="flex justify-between items-center mb-2">
+            <h3 class="text-2xl font-bold tracking-tight opacity-50">Spatial Keyboard</h3>
+            <button id="btn-keyboard-close" class="interactable bg-red-500/20 hover:bg-red-500/40 text-red-500 w-12 h-12 rounded-full flex items-center justify-center border border-red-500/30">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
         <!-- Input Display -->
-        <div id="keyboard-display" class="bg-white/10 px-6 py-3 rounded-2xl text-xl tracking-wide border border-white/20 min-h-[50px] flex items-center"></div>
+        <div id="keyboard-display" class="bg-white/10 px-8 py-4 rounded-2xl text-2xl tracking-wide border border-white/20 min-h-[60px] flex items-center"></div>
         
         <!-- Keys -->
         <div id="keyboard-keys" class="grid grid-cols-10 gap-2 mt-4">

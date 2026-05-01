@@ -3,10 +3,12 @@ export class VirtualKeyboard {
         this.overlay = document.getElementById('keyboard-overlay');
         this.display = document.getElementById('keyboard-display');
         this.keysContainer = document.getElementById('keyboard-keys');
+        this.btnClose = document.getElementById('btn-keyboard-close');
         this.targetInput = null;
         
         this.currentSet = 'alpha'; // alpha, numeric, symbol
         this.currentValue = "";
+        this.isOpen = false;
 
         this.layouts = {
             alpha: ["q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"],
@@ -18,6 +20,10 @@ export class VirtualKeyboard {
     }
 
     bindEvents() {
+        if (this.btnClose) {
+            this.btnClose.addEventListener('click', () => this.close());
+        }
+
         // Global focus listener to trigger keyboard
         document.addEventListener('focusin', (e) => {
             if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
@@ -36,12 +42,14 @@ export class VirtualKeyboard {
     open(input) {
         this.targetInput = input;
         this.currentValue = input.value;
+        this.isOpen = true;
         this.render();
         this.overlay.classList.remove('hidden');
         this.overlay.classList.add('flex');
     }
 
     close() {
+        this.isOpen = false;
         this.overlay.classList.add('hidden');
         this.overlay.classList.remove('flex');
     }

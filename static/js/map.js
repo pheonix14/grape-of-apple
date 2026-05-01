@@ -13,14 +13,23 @@ export class MapController {
         this.btnLocate = document.getElementById('btn-map-locate');
         this.btnMarker = document.getElementById('btn-map-marker');
         this.btnClear = document.getElementById('btn-map-clear');
+        this.btnAlt = document.getElementById('btn-map-alt');
         this.searchInput = document.getElementById('map-search-input');
         this.btnSearch = document.getElementById('btn-map-search');
 
         this.map = null;
-        this.routingControl = null;
+        this.activePolylines = [];
+        this.currentRoutes = [];
+        this.currentRouteIndex = 0;
+        
+        this.infoPanel = document.getElementById('map-route-info');
+        this.distanceEl = document.getElementById('route-distance');
+        this.timeEl = document.getElementById('route-time');
+        
         this.userLocation = [37.7749, -122.4194]; 
         this.isPlacementMode = false;
         this.placedMarkers = [];
+        this.destMarker = null;
 
         // Drag/Swipe state
         this.isOpen = false;
@@ -43,7 +52,7 @@ export class MapController {
         if (this.btnLocate) {
             this.btnLocate.addEventListener('click', () => {
                 if (this.map) {
-                    this.map.setView(this.userLocation, 15);
+                    this.map.flyTo(this.userLocation, 15);
                     L.marker(this.userLocation).addTo(this.map).bindPopup("My Location").openPopup();
                 }
             });
@@ -53,60 +62,97 @@ export class MapController {
             this.btnMarker.addEventListener('click', () => {
                 this.isPlacementMode = !this.isPlacementMode;
                 this.btnMarker.classList.toggle('bg-red-500/60');
-                if (this.isPlacementMode) {
-                    console.log("Map Placement Mode: Active");
-                }
             });
         }
 
         if (this.btnClear) {
             this.btnClear.addEventListener('click', () => {
-                this.placedMarkers.forEach(m => this.map.removeLayer(m));
-                this.placedMarkers = [];
+                this.clearMap();
+            });
+        }
+
+        if (this.btnAlt) {
+            this.btnAlt.addEventListener('click', () => {
+                if (this.currentRoutes.length > 1) {
+                    this.currentRouteIndex = (this.currentRouteIndex + 1) % this.currentRoutes.length;
+                    this.drawRoute(this.currentRouteIndex);
+                }
             });
         }
 
         if (this.btnZoomIn) {
-            this.btnZoomIn.addEventListener('click', () => {
-                this.zoomInBy(1);
-            });
+            this.btnZoomIn.addEventListener('click', () => this.zoomInBy(1));
         }
         if (this.btnZoomOut) {
-            this.btnZoomOut.addEventListener('click', () => {
-                this.zoomOutBy(1);
-            });
+            this.btnZoomOut.addEventListener('click', () => this.zoomOutBy(1));
         }
+        
         if (this.btnSearch) {
-            this.btnSearch.addEventListener('click', async () => {
-                const q = this.searchInput.value.trim();
-                if (q) {
-                    const matches = await this.searchMultipleLocations(q);
-                    if (matches.length > 0) {
-                        this.routeTo(matches[0].latitude, matches[0].longitude);
-                    } else {
-                        this.searchInput.value = "";
-                        this.searchInput.placeholder = "Location not found...";
-                        setTimeout(() => {
-                            this.searchInput.placeholder = "Search locations...";
-                        }, 2000);
-                    }
-                }
-            });
+            this.btnSearch.addEventListener('click', () => this.handleSearch());
         }
+        
+        this.searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleSearch();
+        });
+    }
+
+    async handleSearch() {
+        const q = this.searchInput.value.trim();
+        if (!q) return;
+
+        // 1. Try Supabase first
+        let matches = await this.searchSupabase(q);
+        
+        // 2. Fallback to Nominatim (Global)
+        if (matches.length === 0) {
+            matches = await this.searchGlobal(q);
+        }
+
+        if (matches.length > 0) {
+            const loc = matches[0];
+            this.generatePaths(loc.lat, loc.lon, loc.name);
+        } else {
+            this.searchInput.value = "";
+            this.searchInput.placeholder = "Location not found...";
+            setTimeout(() => this.searchInput.placeholder = "Search locations...", 2000);
+        }
+    }
+
+    async searchSupabase(query) {
+        try {
+            const { data, error } = await this.supabase
+                .from('locations')
+                .select('*')
+                .ilike('name', `%${query}%`)
+                .limit(5);
+            return (data || []).map(d => ({ lat: d.latitude, lon: d.longitude, name: d.name }));
+        } catch (e) { return []; }
+    }
+
+    async searchGlobal(query) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+            const data = await res.json();
+            return data.map(d => ({ lat: parseFloat(d.lat), lon: parseFloat(d.lon), name: d.display_name }));
+        } catch (e) { return []; }
+    }
+
+    clearMap() {
+        this.placedMarkers.forEach(m => this.map.removeLayer(m));
+        this.placedMarkers = [];
+        this.activePolylines.forEach(p => this.map.removeLayer(p));
+        this.activePolylines = [];
+        if (this.destMarker) this.map.removeLayer(this.destMarker);
+        this.infoPanel.classList.add('hidden');
+        this.btnAlt.classList.add('hidden');
     }
 
     zoomInBy(amount = 1) {
-        if (this.map) {
-            const currentZoom = this.map.getZoom();
-            this.map.setZoom(currentZoom + parseInt(amount));
-        }
+        if (this.map) this.map.setZoom(this.map.getZoom() + amount);
     }
 
     zoomOutBy(amount = 1) {
-        if (this.map) {
-            const currentZoom = this.map.getZoom();
-            this.map.setZoom(currentZoom - parseInt(amount));
-        }
+        if (this.map) this.map.setZoom(this.map.getZoom() - amount);
     }
 
     openMap() {
@@ -115,42 +161,23 @@ export class MapController {
         if (this.settings) this.settings.setAppOpen(true);
         
         if (!this.map) {
-            setTimeout(() => {
-                this.initMap();
-                this.loadLocations();
-            }, 300); 
+            setTimeout(() => this.initMap(), 300); 
         } else {
-            setTimeout(() => {
-                this.map.invalidateSize();
-            }, 300);
+            setTimeout(() => this.map.invalidateSize(), 300);
         }
     }
 
     initMap() {
-        this.map = L.map('map-container', {
-            zoomControl: false 
-        }).setView(this.userLocation, 13);
+        this.map = L.map('map-container', { zoomControl: false }).setView(this.userLocation, 13);
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; CartoDB'
         }).addTo(this.map);
 
         this.map.on('click', (e) => {
-            console.log("Map clicked at:", e.latlng);
             if (this.isPlacementMode) {
-                // Remove previous manual markers (one place only)
-                this.placedMarkers.forEach(m => this.map.removeLayer(m));
-                this.placedMarkers = [];
-
-                const marker = L.marker([e.latlng.lat, e.latlng.lng], {
-                    draggable: true,
-                    title: "Destination"
-                }).addTo(this.map);
-                
-                marker.bindPopup(`<b>Destination Set</b><br>Lat: ${e.latlng.lat.toFixed(4)}<br>Lng: ${e.latlng.lng.toFixed(4)}`).openPopup();
-                this.placedMarkers.push(marker);
-
-                // Auto-disable mode after placing
+                this.clearMap();
+                this.generatePaths(e.latlng.lat, e.latlng.lng, "Pinned Location");
                 this.isPlacementMode = false;
                 this.btnMarker.classList.remove('bg-red-500/60');
             }
@@ -160,65 +187,77 @@ export class MapController {
             navigator.geolocation.getCurrentPosition(pos => {
                 this.userLocation = [pos.coords.latitude, pos.coords.longitude];
                 this.map.setView(this.userLocation, 13);
-                L.circleMarker(this.userLocation, { color: '#0ff', radius: 8 }).addTo(this.map).bindPopup("You are here");
+                L.circleMarker(this.userLocation, { color: '#0ff', radius: 8, fillOpacity: 1 }).addTo(this.map);
             });
         }
-
-        setTimeout(() => this.map.invalidateSize(), 400);
     }
 
-    async loadLocations() {
+    async generatePaths(lat, lon, name) {
+        if (!this.map) this.initMap();
+        
+        // Clear previous
+        this.activePolylines.forEach(p => this.map.removeLayer(p));
+        this.activePolylines = [];
+        if (this.destMarker) this.map.removeLayer(this.destMarker);
+
+        // Add destination marker
+        this.destMarker = L.marker([lat, lon]).addTo(this.map).bindPopup(`<b>${name}</b>`).openPopup();
+        this.map.flyTo([lat, lon], 14);
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${this.userLocation[1]},${this.userLocation[0]};${lon},${lat}?overview=full&geometries=geojson&alternatives=true`;
+        
         try {
-            const { data: locations, error: locErr } = await this.supabase.from('locations').select('*');
-            if (locations) {
-                locations.forEach(loc => {
-                    if (loc.latitude && loc.longitude) {
-                        const marker = L.marker([loc.latitude, loc.longitude]).addTo(this.map);
-                        marker.bindPopup(`<b>${loc.name || 'Location'}</b><br>${loc.description || ''}`);
-                    }
-                });
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            if (data.code === 'Ok') {
+                this.currentRoutes = data.routes;
+                this.currentRouteIndex = 0;
+                this.drawRoute(0);
+                
+                if (this.currentRoutes.length > 1) {
+                    this.btnAlt.classList.remove('hidden');
+                } else {
+                    this.btnAlt.classList.add('hidden');
+                }
             }
         } catch (e) {
-            console.error("Error fetching Supabase data:", e);
+            console.error("Routing Error:", e);
         }
     }
 
-    routeTo(lat, lng) {
-        if (!this.map) this.initMap();
-        this.openMap();
-        
-        if (this.routingControl) {
-            this.map.removeControl(this.routingControl);
-        }
+    drawRoute(index) {
+        // Clear current polylines
+        this.activePolylines.forEach(p => this.map.removeLayer(p));
+        this.activePolylines = [];
 
-        this.routingControl = L.Routing.control({
-            waypoints: [
-                L.latLng(this.userLocation[0], this.userLocation[1]),
-                L.latLng(lat, lng)
-            ],
-            routeWhileDragging: false,
-            show: false 
+        const route = this.currentRoutes[index];
+        const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]);
+        
+        // Draw path
+        const polyline = L.polyline(coordinates, {
+            color: index === 0 ? '#00ff88' : '#00ccff',
+            weight: 8,
+            opacity: 0.8,
+            lineJoin: 'round'
         }).addTo(this.map);
-    }
 
-    async searchMultipleLocations(query) {
-        const { data, error } = await this.supabase
-            .from('locations')
-            .select('*')
-            .ilike('name', `%${query}%`)
-            .limit(3); 
-        
-        return data || [];
+        this.activePolylines.push(polyline);
+        this.map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+
+        // Update UI
+        this.infoPanel.classList.remove('hidden');
+        this.distanceEl.innerText = `${(route.distance / 1000).toFixed(1)} km`;
+        this.timeEl.innerText = `${Math.round(route.duration / 60)} min`;
     }
 
     handleHandGesture(hand) {
         if (!this.isOpen || !this.map || this.isPlacementMode) return;
 
-        if (hand.isPinching && hand.pinchDistance < 0.05) {
+        if (hand.isPinching && hand.pinchDistance < 0.08) {
             if (this.lastPinchPos) {
                 const dx = -(hand.x - this.lastPinchPos.x) * 2; 
                 const dy = -(hand.y - this.lastPinchPos.y) * 2;
-                
                 if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
                     this.map.panBy([dx, dy], { animate: false });
                 }

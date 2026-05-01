@@ -18,7 +18,9 @@ export class UIController {
         this.cursor.style.top = `${y}px`;
         this.cursorRing.style.left = `${x}px`;
         this.cursorRing.style.top = `${y}px`;
+        
         this.checkHover(x, y);
+        this.applyPanelTilt(x, y);
     }
 
     setPinching(pinching) {
@@ -46,35 +48,37 @@ export class UIController {
     dispatchSpatialClick() {
         const elements = document.elementsFromPoint(this.currentX, this.currentY);
         
-        // Find if there's an interactable button first
-        const interactable = elements.find(el => el.classList.contains('interactable'));
-        const mapContainer = elements.find(el => el.id === 'map-container');
-        
-        // Priority: 1. Interactable Buttons, 2. Map Container, 3. Anything else
-        const target = interactable || mapContainer || elements.find(el => 
-            !el.id?.includes('spatial-cursor') && 
-            !el.id?.includes('output_canvas') &&
-            !el.id?.includes('input_video')
-        );
+        // Check if keyboard is open
+        const keyboardOverlay = document.getElementById('keyboard-overlay');
+        const isKeyboardVisible = keyboardOverlay && !keyboardOverlay.classList.contains('hidden');
+
+        let target;
+        if (isKeyboardVisible) {
+            // ONLY allow clicking elements INSIDE the keyboard overlay
+            target = elements.find(el => 
+                keyboardOverlay.contains(el) && el.classList.contains('interactable')
+            );
+        } else {
+            const interactable = elements.find(el => el.classList.contains('interactable'));
+            const mapContainer = elements.find(el => el.id === 'map-container');
+            
+            target = interactable || mapContainer || elements.find(el => 
+                !el.id?.includes('spatial-cursor') && 
+                !el.id?.includes('output_canvas') &&
+                !el.id?.includes('input_video')
+            );
+        }
 
         if (target) {
             target.classList.add('clicked');
             
-            // Create a high-fidelity MouseEvent for frameworks like Leaflet
-            // We dispatch to BOTH the target and potentially the map container directly
             const clickEvent = new MouseEvent('click', {
-                view: window,
-                bubbles: true,
-                cancelable: true,
-                clientX: this.currentX,
-                clientY: this.currentY,
-                button: 0
+                view: window, bubbles: true, cancelable: true,
+                clientX: this.currentX, clientY: this.currentY, button: 0
             });
             
             target.dispatchEvent(clickEvent);
             
-            // If we didn't hit the map container directly but it was in the stack, 
-            // dispatch a separate event to it just to be sure
             if (mapContainer && target !== mapContainer) {
                 const mapClick = new MouseEvent('click', {
                     view: window, bubbles: true, cancelable: true,
@@ -82,13 +86,50 @@ export class UIController {
                 });
                 mapContainer.dispatchEvent(mapClick);
             }
-
-            console.log("Spatial Event Dispatched to:", target.id || target.tagName);
         }
     }
 
+    applyPanelTilt(x, y) {
+        // Find visible full-screen or large panels
+        const panels = document.querySelectorAll('.glass-panel:not(.hidden)');
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+
+        panels.forEach(panel => {
+            // Only tilt if it's a primary panel (Settings, Music, Map)
+            if (panel.id === 'settings-panel' || panel.classList.contains('music-bg') || panel.parentElement.id === 'map-window') {
+                const rect = panel.getBoundingClientRect();
+                
+                // Calculate tilt based on distance from hand to panel center
+                const panelCenterX = rect.left + rect.width / 2;
+                const panelCenterY = rect.top + rect.height / 2;
+                
+                const deltaX = (x - panelCenterX) / (window.innerWidth / 2);
+                const deltaY = (y - panelCenterY) / (window.innerHeight / 2);
+                
+                const rotY = deltaX * 10; // Max 10 degrees
+                const rotX = -deltaY * 10;
+
+                // Combine with existing scale from CSS
+                const scale = getComputedStyle(document.documentElement).getPropertyValue('--panel-scale') || 1;
+                
+                // Special case for sidebar centering
+                let transform = `perspective(1200px) scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+                
+                if (panel.id === 'settings-panel') {
+                     // Keep its vertical centering
+                     panel.style.transform = `translateY(-50%) ${transform}`;
+                } else {
+                     panel.style.transform = transform;
+                }
+                
+                panel.style.transition = 'transform 0.1s ease-out';
+            }
+        });
+    }
+
     checkHover(x, y) {
-        const interactables = document.querySelectorAll('.interactable, #map-container');
+        const interactables = document.querySelectorAll('.interactable');
         let foundHover = false;
 
         interactables.forEach(el => {
@@ -104,14 +145,15 @@ export class UIController {
                 }
                 foundHover = true;
 
-                if (el.classList.contains('interactable')) {
-                    const relX = ((x - rect.left) / rect.width) * 2 - 1;
-                    const relY = ((y - rect.top) / rect.height) * 2 - 1;
-                    const rotX = -relY * 25; 
-                    const rotY = relX * 25; 
-                    el.style.transform = `perspective(800px) scale(calc(var(--panel-scale) * var(--hover-scale))) translateY(-5px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
-                }
-
+                // Calculate tilt for the individual button/icon
+                const relX = ((x - rect.left) / rect.width) * 2 - 1;
+                const relY = ((y - rect.top) / rect.height) * 2 - 1;
+                const rotX = -relY * 30; 
+                const rotY = relX * 30; 
+                
+                // Add a "floating" translateY
+                el.style.transform = `perspective(800px) scale(calc(var(--panel-scale) * var(--hover-scale))) translateY(-15px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+                el.style.zIndex = "100";
             } else {
                 if (el.classList.contains('hovered') && this.hoveredElement !== el) {
                     el.classList.remove('hovered');

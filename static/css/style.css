@@ -6,21 +6,52 @@
     --text-size: 16px;
     --panel-scale: 1;
     --app-border-color: rgba(255, 255, 255, 0.1);
+    --text-primary: #ffffff;
+    --panel-bg: rgba(255, 255, 255, 0.1);
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    transition: background-color 0.5s ease, font-size 0.3s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    transition: background-color 0.5s ease, font-size 0.3s ease, color 0.3s ease;
     font-size: var(--text-size);
+    color: var(--text-primary);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.9);
+    font-weight: 400;
 }
 
-.dynamic-text {
-    /* No longer needed but kept for compatibility */
+/* Force shadows and larger size on grey and semi-transparent text - Converting to white with heavy outlines */
+.text-white\/50, .text-white\/60, .text-white\/70, .opacity-60, .opacity-70, .tracking-widest, label, .text-white\/40 {
+    color: white !important;
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0 2px 4px rgba(0,0,0,0.8) !important;
+    font-size: 1.1em !important; 
+    font-weight: 400 !important;
+    letter-spacing: 0.05em;
 }
 
-/* Ensure all interactive text scales */
-.interactable, .glass-panel, input, button, span, h2, h3, div {
-    font-size: inherit;
+/* Apply drop-shadow to all app icons and SVGs */
+svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+    transition: filter 0.3s ease;
+}
+
+.interactable:hover svg {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+/* Ensure all interactive text scales and shadows */
+.interactable, .glass-panel, input, button, span, h2, h3, div, p {
+    font-size: var(--text-size);
+    text-shadow: inherit;
+}
+
+.glass-panel h2 {
+    font-size: calc(var(--text-size) * 1.5);
+    font-weight: 700;
 }
 
 .sidebar-toolbar {
@@ -111,48 +142,56 @@ body.app-open .sidebar-toolbar:hover {
 /* ============================
    TRON Legacy (Blue Black)
    ============================ */
-body.tron-legacy { background-color: #00040a; }
+body.tron-legacy { 
+    background-color: #00040a; 
+    --text-primary: #0ff;
+    --panel-bg: rgba(0, 15, 20, 0.7);
+}
 body.tron-legacy #input_video { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(140deg) saturate(2); }
-body.tron-legacy .glass-panel { background: rgba(0, 15, 20, 0.7) !important; border: 1px solid #0ff !important; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1) !important; color: #0ff !important; }
-body.tron-legacy .interactable button { background: rgba(0, 255, 255, 0.2) !important; border: 1px solid #0ff; color: #0ff; }
-body.tron-legacy .bg-gradient-1, body.tron-legacy .bg-gradient-2, body.tron-legacy .bg-gradient-3, body.tron-legacy .bg-gradient-4, body.tron-legacy .bg-gradient-5, body.tron-legacy .bg-gradient-6, body.tron-legacy .bg-gradient-7, body.tron-legacy .bg-gradient-8 { background: #000 !important; border: 2px solid #0ff !important; box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.8), 0 0 15px rgba(0, 255, 255, 0.8) !important; }
-body.tron-legacy .interactable.hovered { box-shadow: 0 0 30px #0ff !important; }
-body.tron-legacy svg { color: #0ff !important; filter: drop-shadow(0 0 5px #0ff); }
+body.tron-legacy .glass-panel { background: var(--panel-bg) !important; border: 1px solid #0ff !important; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1) !important; color: var(--text-primary) !important; }
 
 /* ============================
    TRON Ares (Red Black)
    ============================ */
-body.tron-ares-rb { background-color: #0a0000; }
+body.tron-ares-rb { 
+    background-color: #0a0000; 
+    --text-primary: #ff003c;
+    --panel-bg: rgba(20, 0, 0, 0.7);
+}
 body.tron-ares-rb #input_video { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(320deg) saturate(3); }
-body.tron-ares-rb .glass-panel { background: rgba(20, 0, 0, 0.7) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3), inset 0 0 10px rgba(255, 0, 60, 0.1) !important; color: #ff003c !important; }
-body.tron-ares-rb .interactable button { background: rgba(255, 0, 60, 0.2) !important; border: 1px solid #ff003c; color: #ff003c; }
-body.tron-ares-rb .bg-gradient-1, body.tron-ares-rb .bg-gradient-2, body.tron-ares-rb .bg-gradient-3, body.tron-ares-rb .bg-gradient-4, body.tron-ares-rb .bg-gradient-5, body.tron-ares-rb .bg-gradient-6, body.tron-ares-rb .bg-gradient-7, body.tron-ares-rb .bg-gradient-8 { background: #000 !important; border: 2px solid #ff003c !important; box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.8), 0 0 15px rgba(255, 0, 60, 0.8) !important; }
-body.tron-ares-rb .interactable.hovered { box-shadow: 0 0 30px #ff003c !important; }
-body.tron-ares-rb svg { color: #ff003c !important; filter: drop-shadow(0 0 5px #ff003c); }
+body.tron-ares-rb .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3), inset 0 0 10px rgba(255, 0, 60, 0.1) !important; color: var(--text-primary) !important; }
 
 /* ============================
    TRON Ares (Red White)
    ============================ */
-body.tron-ares-rw { background-color: #fdfdfd; color: #ff003c !important; }
+body.tron-ares-rw { 
+    background-color: #fdfdfd; 
+    --text-primary: #ff003c;
+    --panel-bg: rgba(255, 255, 255, 0.8);
+}
 body.tron-ares-rw #input_video { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(330deg); }
-body.tron-ares-rw .glass-panel { background: rgba(255, 255, 255, 0.8) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: #ff003c !important; }
-body.tron-ares-rw .interactable button { background: rgba(255, 0, 60, 0.1) !important; border: 1px solid #ff003c; color: #ff003c; }
-body.tron-ares-rw .bg-gradient-1, body.tron-ares-rw .bg-gradient-2, body.tron-ares-rw .bg-gradient-3, body.tron-ares-rw .bg-gradient-4, body.tron-ares-rw .bg-gradient-5, body.tron-ares-rw .bg-gradient-6, body.tron-ares-rw .bg-gradient-7, body.tron-ares-rw .bg-gradient-8 { background: #fff !important; border: 2px solid #ff003c !important; box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.3), 0 0 15px rgba(255, 0, 60, 0.3) !important; }
-body.tron-ares-rw .interactable.hovered { box-shadow: 0 0 30px #ff003c !important; }
-body.tron-ares-rw svg { color: #ff003c !important; filter: drop-shadow(0 0 3px #ff003c); }
-body.tron-ares-rw .text-white { color: #ff003c !important; } /* Override tailwind text-white */
+body.tron-ares-rw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: var(--text-primary) !important; }
+body.tron-ares-rw .text-white, body.tron-ares-rw span, body.tron-ares-rw h2, body.tron-ares-rw h3 { color: #ff003c !important; }
 
 /* ============================
    TRON Ares (Blue White)
    ============================ */
-body.tron-ares-bw { background-color: #f8fafc; color: #0284c7 !important; }
+body.tron-ares-bw { 
+    background-color: #f8fafc; 
+    --text-primary: #0284c7;
+    --panel-bg: rgba(255, 255, 255, 0.8);
+}
 body.tron-ares-bw #input_video { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(200deg); }
-body.tron-ares-bw .glass-panel { background: rgba(255, 255, 255, 0.8) !important; border: 1px solid #0284c7 !important; box-shadow: 0 0 20px rgba(2, 132, 199, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: #0284c7 !important; }
-body.tron-ares-bw .interactable button { background: rgba(2, 132, 199, 0.1) !important; border: 1px solid #0284c7; color: #0284c7; }
-body.tron-ares-bw .bg-gradient-1, body.tron-ares-bw .bg-gradient-2, body.tron-ares-bw .bg-gradient-3, body.tron-ares-bw .bg-gradient-4, body.tron-ares-bw .bg-gradient-5, body.tron-ares-bw .bg-gradient-6, body.tron-ares-bw .bg-gradient-7, body.tron-ares-bw .bg-gradient-8 { background: #fff !important; border: 2px solid #0284c7 !important; box-shadow: inset 0 0 15px rgba(2, 132, 199, 0.3), 0 0 15px rgba(2, 132, 199, 0.3) !important; }
-body.tron-ares-bw .interactable.hovered { box-shadow: 0 0 30px #0284c7 !important; }
-body.tron-ares-bw svg { color: #0284c7 !important; filter: drop-shadow(0 0 3px #0284c7); }
-body.tron-ares-bw .text-white { color: #0284c7 !important; } /* Override tailwind text-white */
+body.tron-ares-bw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #0284c7 !important; box-shadow: 0 0 20px rgba(2, 132, 199, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: var(--text-primary) !important; }
+body.tron-ares-bw .text-white, body.tron-ares-bw span, body.tron-ares-bw h2, body.tron-ares-bw h3 { color: #0284c7 !important; }
+
+.glass-panel {
+    color: inherit;
+}
+
+.interactable button, .interactable {
+    color: inherit;
+}
 
 /* Music Player Minimized State */
 #music-player.minimized .music-bg { background: transparent !important; border: none !important; box-shadow: none !important; backdrop-filter: none !important; padding: 0 !important; }
