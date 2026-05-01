@@ -4,15 +4,39 @@
     --hover-scale: 1.25;
     --camera-zoom: 1;
     --text-size: 16px;
+    --panel-scale: 1;
     --app-border-color: rgba(255, 255, 255, 0.1);
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    transition: background-color 0.5s ease, font-size 0.3s ease;
+    font-size: var(--text-size);
 }
 
 .dynamic-text {
-    font-size: var(--text-size);
+    /* No longer needed but kept for compatibility */
+}
+
+/* Ensure all interactive text scales */
+.interactable, .glass-panel, input, button, span, h2, h3, div {
+    font-size: inherit;
+}
+
+.sidebar-toolbar {
+    transform: translateY(-50%) scale(var(--panel-scale));
+    transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+/* App Open State - Shrink Sidebar */
+body.app-open .sidebar-toolbar {
+    transform: translateY(-50%) scale(calc(var(--panel-scale) * 0.6));
+    opacity: 0.4;
+}
+
+body.app-open .sidebar-toolbar:hover {
+    transform: translateY(-50%) scale(var(--panel-scale));
+    opacity: 1;
 }
 
 /* Connect CSS Variables to Tailwind elements dynamically */
@@ -24,8 +48,19 @@ body {
     transform-style: preserve-3d;
 }
 
+#settings-panel, .music-bg, #map-window .glass-panel {
+    transform: scale(var(--panel-scale));
+    transition: transform 0.3s ease-out;
+}
+
 .interactable.hovered {
     transform: scale(var(--hover-scale)) translateY(-10px) !important;
+}
+
+.interactable.clicked {
+    transform: scale(0.9) !important;
+    filter: brightness(1.5);
+    transition: transform 0.1s;
 }
 
 #input_video, #output_canvas {

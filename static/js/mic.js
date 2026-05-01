@@ -71,6 +71,18 @@ export class MicAssistant {
                         this.optionsContainer.classList.remove('hidden');
                         this.optionsContainer.innerHTML = matches.map((m, i) => `<div>${i+1}. ${m.name}</div>`).join('');
                     }
+                } else if (transcript.includes('zoom in')) {
+                    const match = transcript.match(/zoom in (\d+)/);
+                    const amount = match ? match[1] : 1;
+                    this.mapController.zoomInBy(amount);
+                    this.statusText.innerText = `Zoomed in by ${amount}`;
+                    setTimeout(() => this.resetToIdle(), 1000);
+                } else if (transcript.includes('zoom out')) {
+                    const match = transcript.match(/zoom out (\d+)/);
+                    const amount = match ? match[1] : 1;
+                    this.mapController.zoomOutBy(amount);
+                    this.statusText.innerText = `Zoomed out by ${amount}`;
+                    setTimeout(() => this.resetToIdle(), 1000);
                 }
             } else if (this.state === 'SELECTING') {
                 let index = -1;

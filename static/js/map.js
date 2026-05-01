@@ -1,7 +1,8 @@
 import { CONFIG } from './config.js';
 
 export class MapController {
-    constructor() {
+    constructor(settingsController) {
+        this.settings = settingsController;
         this.supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
         this.window = document.getElementById('map-window');
         this.btnClose = document.getElementById('btn-map-close');
@@ -9,12 +10,17 @@ export class MapController {
         // Map UI controls
         this.btnZoomIn = document.getElementById('btn-map-zoom-in');
         this.btnZoomOut = document.getElementById('btn-map-zoom-out');
+        this.btnLocate = document.getElementById('btn-map-locate');
+        this.btnMarker = document.getElementById('btn-map-marker');
+        this.btnClear = document.getElementById('btn-map-clear');
         this.searchInput = document.getElementById('map-search-input');
         this.btnSearch = document.getElementById('btn-map-search');
 
         this.map = null;
         this.routingControl = null;
         this.userLocation = [37.7749, -122.4194]; 
+        this.isPlacementMode = false;
+        this.placedMarkers = [];
 
         // Drag/Swipe state
         this.isOpen = false;
@@ -31,16 +37,43 @@ export class MapController {
         this.btnClose.addEventListener('click', () => {
             this.window.classList.add('hidden');
             this.isOpen = false;
+            if (this.settings) this.settings.setAppOpen(false);
         });
+
+        if (this.btnLocate) {
+            this.btnLocate.addEventListener('click', () => {
+                if (this.map) {
+                    this.map.setView(this.userLocation, 15);
+                    L.marker(this.userLocation).addTo(this.map).bindPopup("My Location").openPopup();
+                }
+            });
+        }
+
+        if (this.btnMarker) {
+            this.btnMarker.addEventListener('click', () => {
+                this.isPlacementMode = !this.isPlacementMode;
+                this.btnMarker.classList.toggle('bg-red-500/60');
+                if (this.isPlacementMode) {
+                    console.log("Map Placement Mode: Active");
+                }
+            });
+        }
+
+        if (this.btnClear) {
+            this.btnClear.addEventListener('click', () => {
+                this.placedMarkers.forEach(m => this.map.removeLayer(m));
+                this.placedMarkers = [];
+            });
+        }
 
         if (this.btnZoomIn) {
             this.btnZoomIn.addEventListener('click', () => {
-                if (this.map) this.map.zoomIn();
+                this.zoomInBy(1);
             });
         }
         if (this.btnZoomOut) {
             this.btnZoomOut.addEventListener('click', () => {
-                if (this.map) this.map.zoomOut();
+                this.zoomOutBy(1);
             });
         }
         if (this.btnSearch) {
@@ -51,22 +84,40 @@ export class MapController {
                     if (matches.length > 0) {
                         this.routeTo(matches[0].latitude, matches[0].longitude);
                     } else {
-                        alert("Location not found.");
+                        this.searchInput.value = "";
+                        this.searchInput.placeholder = "Location not found...";
+                        setTimeout(() => {
+                            this.searchInput.placeholder = "Search locations...";
+                        }, 2000);
                     }
                 }
             });
         }
     }
 
+    zoomInBy(amount = 1) {
+        if (this.map) {
+            const currentZoom = this.map.getZoom();
+            this.map.setZoom(currentZoom + parseInt(amount));
+        }
+    }
+
+    zoomOutBy(amount = 1) {
+        if (this.map) {
+            const currentZoom = this.map.getZoom();
+            this.map.setZoom(currentZoom - parseInt(amount));
+        }
+    }
+
     openMap() {
         this.window.classList.remove('hidden');
         this.isOpen = true;
+        if (this.settings) this.settings.setAppOpen(true);
         
         if (!this.map) {
             setTimeout(() => {
                 this.initMap();
                 this.loadLocations();
-                this.map.invalidateSize();
             }, 300); 
         } else {
             setTimeout(() => {
@@ -77,15 +128,33 @@ export class MapController {
 
     initMap() {
         this.map = L.map('map-container', {
-            zoomControl: false // Hide default zoom controls to use our big buttons
+            zoomControl: false 
         }).setView(this.userLocation, 13);
         
-        // Always load dark mode map
-        const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-            
-        L.tileLayer(tileUrl, {
-            attribution: '© OpenStreetMap contributors'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; CartoDB'
         }).addTo(this.map);
+
+        this.map.on('click', (e) => {
+            console.log("Map clicked at:", e.latlng);
+            if (this.isPlacementMode) {
+                // Remove previous manual markers (one place only)
+                this.placedMarkers.forEach(m => this.map.removeLayer(m));
+                this.placedMarkers = [];
+
+                const marker = L.marker([e.latlng.lat, e.latlng.lng], {
+                    draggable: true,
+                    title: "Destination"
+                }).addTo(this.map);
+                
+                marker.bindPopup(`<b>Destination Set</b><br>Lat: ${e.latlng.lat.toFixed(4)}<br>Lng: ${e.latlng.lng.toFixed(4)}`).openPopup();
+                this.placedMarkers.push(marker);
+
+                // Auto-disable mode after placing
+                this.isPlacementMode = false;
+                this.btnMarker.classList.remove('bg-red-500/60');
+            }
+        });
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
@@ -94,11 +163,12 @@ export class MapController {
                 L.circleMarker(this.userLocation, { color: '#0ff', radius: 8 }).addTo(this.map).bindPopup("You are here");
             });
         }
+
+        setTimeout(() => this.map.invalidateSize(), 400);
     }
 
     async loadLocations() {
         try {
-            // Load every coordinate from supabase locations table
             const { data: locations, error: locErr } = await this.supabase.from('locations').select('*');
             if (locations) {
                 locations.forEach(loc => {
@@ -141,31 +211,14 @@ export class MapController {
         return data || [];
     }
 
-    // Called by the mic assistant (legacy single search)
-    async searchLocationByVoice(query) {
-        const data = await this.searchMultipleLocations(query);
-        if (data && data.length > 0) {
-            const loc = data[0];
-            if (loc.latitude && loc.longitude) {
-                this.routeTo(loc.latitude, loc.longitude);
-                return `Routing to ${loc.name}`;
-            }
-        }
-        return `I couldn't find ${query} in the database.`;
-    }
-
-    // Handle spatial hand drag to pan map
     handleHandGesture(hand) {
-        if (!this.isOpen || !this.map) return;
+        if (!this.isOpen || !this.map || this.isPlacementMode) return;
 
-        // If pinching, act as a drag
         if (hand.isPinching && hand.pinchDistance < 0.05) {
             if (this.lastPinchPos) {
-                // Calculate delta in pixels (hand coords are window pixel space)
-                const dx = -(hand.x - this.lastPinchPos.x) * 2; // Multiply for speed
+                const dx = -(hand.x - this.lastPinchPos.x) * 2; 
                 const dy = -(hand.y - this.lastPinchPos.y) * 2;
                 
-                // Only pan if there is significant movement
                 if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
                     this.map.panBy([dx, dy], { animate: false });
                 }

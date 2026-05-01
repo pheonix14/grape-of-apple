@@ -6,10 +6,11 @@ export class SettingsController {
         this.isOpen = false;
         
         // CSS Variables to track
-        this.appSize = 64; // px
+        this.appSize = 64; 
         this.hoverScale = 1.25;
         this.cameraZoom = 1.0;
-        this.textSize = 16; // px
+        this.textSize = 16; 
+        this.panelScale = 1.0;
         
         // Themes: 0=Default, 1=Tron Cyan, 2=Tron Red
         this.themeState = 0;
@@ -21,43 +22,29 @@ export class SettingsController {
         // Toggle panel
         this.btnSettings.addEventListener('click', () => this.togglePanel());
 
-        // Panel Size
-        document.getElementById('btn-size-down').addEventListener('click', () => {
+        // Panel/Icon Size
+        document.getElementById('btn-size-down').addEventListener('click', (e) => {
+            e.stopPropagation();
             this.appSize = Math.max(32, this.appSize - 8);
+            this.panelScale = Math.max(0.5, this.panelScale - 0.1);
             this.updateStyles();
         });
-        document.getElementById('btn-size-up').addEventListener('click', () => {
-            this.appSize = Math.min(128, this.appSize + 8);
+        document.getElementById('btn-size-up').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.appSize = Math.min(160, this.appSize + 8);
+            this.panelScale = Math.min(2.0, this.panelScale + 0.1);
             this.updateStyles();
         });
 
         // Text Size
-        document.getElementById('btn-text-down').addEventListener('click', () => {
+        document.getElementById('btn-text-down').addEventListener('click', (e) => {
+            e.stopPropagation();
             this.textSize = Math.max(10, this.textSize - 2);
             this.updateStyles();
         });
-        document.getElementById('btn-text-up').addEventListener('click', () => {
+        document.getElementById('btn-text-up').addEventListener('click', (e) => {
+            e.stopPropagation();
             this.textSize = Math.min(32, this.textSize + 2);
-            this.updateStyles();
-        });
-
-        // Hover Physics
-        document.getElementById('btn-hover-down').addEventListener('click', () => {
-            this.hoverScale = Math.max(1.0, this.hoverScale - 0.1);
-            this.updateStyles();
-        });
-        document.getElementById('btn-hover-up').addEventListener('click', () => {
-            this.hoverScale = Math.min(2.0, this.hoverScale + 0.1);
-            this.updateStyles();
-        });
-
-        // Camera Zoom
-        document.getElementById('btn-zoom-down').addEventListener('click', () => {
-            this.cameraZoom = Math.max(1.0, this.cameraZoom - 0.2);
-            this.updateStyles();
-        });
-        document.getElementById('btn-zoom-up').addEventListener('click', () => {
-            this.cameraZoom = Math.min(3.0, this.cameraZoom + 0.2);
             this.updateStyles();
         });
 
@@ -116,8 +103,16 @@ export class SettingsController {
 
     updateStyles() {
         document.documentElement.style.setProperty('--app-size', `${this.appSize}px`);
-        document.documentElement.style.setProperty('--hover-scale', `${this.hoverScale}`);
-        document.documentElement.style.setProperty('--camera-zoom', `${this.cameraZoom}`);
+        document.documentElement.style.setProperty('--panel-scale', `${this.panelScale}`);
         document.documentElement.style.setProperty('--text-size', `${this.textSize}px`);
+    }
+
+    // Helper to set app-open state
+    setAppOpen(isOpen) {
+        if (isOpen) {
+            document.body.classList.add('app-open');
+        } else {
+            document.body.classList.remove('app-open');
+        }
     }
 }

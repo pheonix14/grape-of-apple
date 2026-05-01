@@ -4,6 +4,7 @@ import { SettingsController } from './settings.js';
 import { MusicPlayer } from './music.js';
 import { MapController } from './map.js';
 import { MicAssistant } from './mic.js';
+import { VirtualKeyboard } from './keyboard.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const videoElement = document.getElementById('input_video');
@@ -11,9 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Controllers
     const ui = new UIController();
     const settings = new SettingsController();
-    const music = new MusicPlayer();
-    const map = new MapController();
+    const map = new MapController(settings);
+    const music = new MusicPlayer(settings); 
     const mic = new MicAssistant(map);
+    const keyboard = new VirtualKeyboard();
 
     // Initialize Hand Tracker with callback
     const tracker = new HandTracker(videoElement, (hand) => {
@@ -22,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const thumbTip = hand[4];
 
         // Map normalized coordinates (0-1) to screen pixels
-        // (Video is mirrored horizontally in UI, so scale-x is inverted)
         const screenX = (1 - indexTip.x) * window.innerWidth;
         const screenY = indexTip.y * window.innerHeight;
 
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dz = indexTip.z - thumbTip.z;
         const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-        const PINCH_THRESHOLD = 0.05; 
+        const PINCH_THRESHOLD = 0.08; 
         const isPinching = distance < PINCH_THRESHOLD;
         ui.setPinching(isPinching);
 
@@ -47,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Handle "Find" click to show keyboard (auto-handled by focus listener in keyboard.js)
+    
     // Start Webcam & Tracking
     tracker.start();
 });
