@@ -57,7 +57,15 @@ body.app-open .sidebar-toolbar:hover {
 }
 
 .interactable.hovered {
-    transform: scale(var(--hover-scale)) translateY(-10px) !important;
+    transform: scale(var(--hover-scale)) translateY(-5px) !important;
+    opacity: 1 !important;
+    filter: brightness(1.2) drop-shadow(0 0 10px rgba(255,255,255,0.3));
+    z-index: 50;
+}
+
+/* Ensure child buttons in a shrunken sidebar pop back to normal size when hovered */
+body.app-open .sidebar-toolbar .interactable.hovered {
+    transform: scale(calc(var(--hover-scale) * 1.6)) translateY(-5px) !important;
 }
 
 .interactable.clicked {
@@ -168,3 +176,47 @@ body.tron-ares-bw .text-white, body.tron-ares-bw span, body.tron-ares-bw h2, bod
 /* Music Player Minimized State */
 #music-player.minimized .music-bg { background: transparent !important; border: none !important; box-shadow: none !important; backdrop-filter: none !important; padding: 0 !important; }
 #music-player.minimized .music-controls { display: none !important; }
+
+/* ============================
+   Treasure Hunt Tactical UI
+   ============================ */
+.treasure-node {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ccff00; /* Neon Lime */
+    filter: drop-shadow(0 0 8px #ccff00);
+    animation: pulse-star 2s infinite ease-in-out;
+}
+
+@keyframes pulse-star {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+.tactical-label.neon-label {
+    background: rgba(10, 10, 10, 0.85) !important;
+    border: 1px solid #ccff00 !important;
+    color: #ccff00 !important;
+    box-shadow: 0 0 10px rgba(204, 255, 0, 0.3) !important;
+    font-family: 'Syncopate', sans-serif;
+    font-size: 10px !important;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 4px 8px;
+    pointer-events: none;
+}
+
+.leaflet-tooltip-top.neon-label::before { border-top-color: #ccff00 !important; }
+
+/* Intel Panel Styles */
+#intel-panel.open {
+    bottom: 0 !important;
+}
+
+.intel-tab.active-tab {
+    color: #00d2ff !important;
+    border-bottom-color: #00d2ff !important;
+    background: rgba(0, 210, 255, 0.05);
+}

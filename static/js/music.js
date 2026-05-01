@@ -3,6 +3,9 @@ export class MusicPlayer {
         this.settings = settingsController;
         this.window = document.getElementById('music-player');
         this.btnClose = document.getElementById('btn-close');
+        this.btnMinimize = document.getElementById('btn-minimize');
+        this.miniPlayer = document.getElementById('mini-player');
+        
         this.btnPlay = document.getElementById('btn-play');
         this.btnLoop = document.getElementById('btn-loop');
         this.fileInput = document.getElementById('music-file-input');
@@ -15,7 +18,10 @@ export class MusicPlayer {
         this.mediaList = document.getElementById('media-list');
         
         this.canvas = document.getElementById('visualizer-canvas');
+        this.miniCanvas = document.getElementById('mini-visualizer-canvas');
         this.ctx = this.canvas.getContext('2d');
+        this.miniCtx = this.miniCanvas.getContext('2d');
+        
         this.audioElement = document.getElementById('audio-element');
         
         this.audioContext = null;
@@ -26,11 +32,10 @@ export class MusicPlayer {
 
         this.isPlaying = false;
         this.isLooping = false;
+        this.isMinimized = false;
 
         this.bindEvents();
         this.loadDefaultLibrary();
-        
-        // Ensure canvas matches its container size
         window.addEventListener('resize', () => this.resizeCanvas());
     }
 
@@ -39,19 +44,21 @@ export class MusicPlayer {
             this.canvas.width = this.canvas.clientWidth;
             this.canvas.height = this.canvas.clientHeight;
         }
+        if (this.miniCanvas) {
+            this.miniCanvas.width = this.miniCanvas.clientWidth;
+            this.miniCanvas.height = this.miniCanvas.clientHeight;
+        }
     }
 
     bindEvents() {
-        // App Icon click
         document.querySelector('[data-app="music"]').addEventListener('click', () => {
-            this.window.classList.remove('hidden');
-            this.settings.setAppOpen(true);
-            setTimeout(() => this.resizeCanvas(), 100);
+            this.maximize();
         });
 
-        // Close
         this.btnClose.addEventListener('click', () => {
             this.window.classList.add('hidden');
+            this.miniPlayer.classList.add('hidden');
+            this.isMinimized = false;
             this.settings.setAppOpen(false);
             if (this.isPlaying) {
                 this.audioElement.pause();
@@ -60,55 +67,45 @@ export class MusicPlayer {
             }
         });
 
-        // Local File Input
-        this.fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                this.playLocalFile(file);
+        this.btnMinimize.addEventListener('click', () => this.minimize());
+        this.miniCanvas.addEventListener('dblclick', () => this.maximize());
+        this.miniCanvas.addEventListener('click', () => {
+            if (this.audioElement.src) {
+                if (this.isPlaying) this.audioElement.pause();
+                else this.audioElement.play();
+                this.isPlaying = !this.isPlaying;
+                this.updatePlayBtn();
             }
         });
 
-        // YouTube Load Button
+        this.fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) this.playLocalFile(file);
+        });
+
         this.ytLoadBtn.addEventListener('click', () => {
             const url = this.ytInput.value.trim();
             if (url) {
                 let embedUrl = "";
-                let videoId = "";
-                
                 if (url.includes('v=')) {
-                    videoId = url.split('v=')[1].split('&')[0];
+                    const videoId = url.split('v=')[1].split('&')[0];
                     embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
-                } else if (url.includes('youtu.be/')) {
-                    videoId = url.split('youtu.be/')[1].split('?')[0];
-                    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
-                } else if (url.includes('playlist?list=')) {
-                    const listId = url.split('list=')[1].split('&')[0];
-                    embedUrl = `https://www.youtube.com/embed/videoseries?list=${listId}&autoplay=1&enablejsapi=1`;
                 }
-
-                // If looping is on, try to force it for single videos
-                if (this.isLooping && videoId) {
-                    embedUrl += `&loop=1&playlist=${videoId}`;
-                }
-
                 if (this.isPlaying) {
                     this.audioElement.pause();
                     this.isPlaying = false;
                     this.updatePlayBtn();
                 }
-
                 this.canvas.classList.add('hidden');
                 this.ytContainer.classList.remove('hidden');
                 this.ytIframe.src = embedUrl;
             }
         });
 
-        // Play/Pause Button
         this.btnPlay.addEventListener('click', () => {
             if (this.audioElement.src && this.ytContainer.classList.contains('hidden')) {
-                if (this.isPlaying) {
-                    this.audioElement.pause();
-                } else {
+                if (this.isPlaying) this.audioElement.pause();
+                else {
                     this.initAudioContext();
                     this.audioElement.play();
                 }
@@ -117,44 +114,42 @@ export class MusicPlayer {
             }
         });
 
-        // Loop Button
         this.btnLoop.addEventListener('click', () => {
             this.isLooping = !this.isLooping;
             this.audioElement.loop = this.isLooping;
-            
-            if (this.isLooping) {
-                this.btnLoop.classList.add('bg-white/20', 'text-[#0ff]');
-                this.btnLoop.classList.remove('bg-white/5', 'text-white');
-            } else {
-                this.btnLoop.classList.remove('bg-white/20', 'text-[#0ff]');
-                this.btnLoop.classList.add('bg-white/5', 'text-white');
-            }
+            this.btnLoop.classList.toggle('bg-white/20', this.isLooping);
         });
     }
 
-    async loadDefaultLibrary() {
-        try {
-            const response = await fetch('/api/media');
-            if (response.ok) {
-                const songs = await response.json();
-                this.renderMediaList(songs);
-            } else {
-                this.renderMediaList(['Sample Track 1.mp3', 'Ambient Vibe.mp3']);
-            }
-        } catch (e) {
-            this.renderMediaList(['Theme Song.mp3']);
-        }
+    minimize() {
+        this.window.classList.add('hidden');
+        this.miniPlayer.classList.remove('hidden');
+        this.isMinimized = true;
+        this.settings.setAppOpen(false);
+        setTimeout(() => this.resizeCanvas(), 50);
+    }
+
+    maximize() {
+        this.window.classList.remove('hidden');
+        this.miniPlayer.classList.add('hidden');
+        this.isMinimized = false;
+        this.settings.setAppOpen(true);
+        setTimeout(() => this.resizeCanvas(), 100);
+    }
+
+    loadDefaultLibrary() {
+        const tracks = [
+            'Nine Inch Nails - As Alive As You Need Me To Be (Official Music Video) - Nine Inch Nails (128k).mp3'
+        ];
+        this.renderMediaList(tracks);
     }
 
     renderMediaList(songs) {
-        this.mediaList.innerHTML = '<div class="text-sm opacity-50 uppercase tracking-widest mb-4 font-bold">Local Library</div>';
+        this.mediaList.innerHTML = '<div class="text-sm opacity-50 uppercase tracking-widest mb-4 font-bold">Tactical Library</div>';
         songs.forEach(song => {
             const item = document.createElement('div');
             item.className = 'flex items-center justify-between bg-white/5 hover:bg-white/10 px-6 py-4 rounded-2xl text-lg interactable transition-all mb-2';
-            item.innerHTML = `
-                <span class="truncate pr-4">${song}</span>
-                <svg class="w-6 h-6 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            `;
+            item.innerHTML = `<span class="truncate pr-4 text-sm font-mono">${song}</span><svg class="w-6 h-6 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
             item.onclick = () => this.playFromServer(song);
             this.mediaList.appendChild(item);
         });
@@ -164,8 +159,7 @@ export class MusicPlayer {
         this.ytContainer.classList.add('hidden');
         this.canvas.classList.remove('hidden');
         this.ytIframe.src = "";
-        const url = URL.createObjectURL(file);
-        this.audioElement.src = url;
+        this.audioElement.src = URL.createObjectURL(file);
         this.audioElement.load();
         this.initAudioContext();
         this.audioElement.play();
@@ -178,7 +172,7 @@ export class MusicPlayer {
         this.ytContainer.classList.add('hidden');
         this.canvas.classList.remove('hidden');
         this.ytIframe.src = "";
-        this.audioElement.src = `/static/media/${filename}`;
+        this.audioElement.src = `/static/media/${encodeURIComponent(filename)}`;
         this.audioElement.load();
         this.initAudioContext();
         this.audioElement.play();
@@ -195,40 +189,62 @@ export class MusicPlayer {
 
     initAudioContext() {
         if (!this.audioContext) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.audioContext = new AudioContext();
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 512;
+            this.analyser.fftSize = 256;
             this.source = this.audioContext.createMediaElementSource(this.audioElement);
             this.source.connect(this.analyser);
             this.analyser.connect(this.audioContext.destination);
             this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
             this.draw();
-        } else if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
+        } else if (this.audioContext.state === 'suspended') this.audioContext.resume();
     }
 
     draw() {
         this.animationId = requestAnimationFrame(() => this.draw());
+        if (!this.analyser) return;
+
         this.analyser.getByteFrequencyData(this.dataArray);
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        const barWidth = (this.canvas.width / this.dataArray.length) * 1.5;
-        let x = 0;
-        for(let i = 0; i < this.dataArray.length; i++) {
-            const barHeight = (this.dataArray[i] / 255) * this.canvas.height;
+        const themeColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim() || '#00d2ff';
+
+        const drawVisualizer = (ctx, canvas) => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Vibrant gradient effect
-            const hue = (i / this.dataArray.length) * 360;
-            this.ctx.fillStyle = `hsla(${hue}, 80%, 50%, 0.8)`;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const bufferLength = this.dataArray.length;
+            const barWidth = (canvas.width / bufferLength) * 1.2;
             
-            // Rounded bars
-            this.ctx.beginPath();
-            this.ctx.roundRect(x, this.canvas.height - barHeight, barWidth - 2, barHeight, 5);
-            this.ctx.fill();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = themeColor;
             
-            x += barWidth;
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = (this.dataArray[i] / 255) * (canvas.height * 0.8);
+                
+                ctx.fillStyle = themeColor;
+                ctx.globalAlpha = 0.7;
+
+                // Symmetric Mirrored Bars from center
+                const xOffset = i * barWidth;
+                
+                // Right side
+                ctx.beginPath();
+                ctx.roundRect(centerX + xOffset, centerY - barHeight / 2, barWidth - 2, barHeight, 5);
+                ctx.fill();
+
+                // Left side
+                ctx.beginPath();
+                ctx.roundRect(centerX - xOffset - barWidth, centerY - barHeight / 2, barWidth - 2, barHeight, 5);
+                ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0; // Reset for performance
+        };
+
+        if (!this.isMinimized) {
+            drawVisualizer(this.ctx, this.canvas);
+        } else {
+            drawVisualizer(this.miniCtx, this.miniCanvas);
         }
     }
 }

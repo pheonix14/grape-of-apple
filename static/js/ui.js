@@ -9,6 +9,23 @@ export class UIController {
         // Track screen position for event dispatching
         this.currentX = 0;
         this.currentY = 0;
+
+        this.bindFullscreen();
+    }
+
+    bindFullscreen() {
+        const btn = document.getElementById('fullscreen-btn');
+        if (btn) {
+            btn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+        }
     }
 
     updateCursor(x, y) {

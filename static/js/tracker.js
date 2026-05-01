@@ -23,7 +23,8 @@ export class HandTracker {
                 await this.hands.send({image: this.videoElement});
             },
             width: 1280,
-            height: 720
+            height: 720,
+            facingMode: 'environment' // Prioritize back camera
         });
     }
 

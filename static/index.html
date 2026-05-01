@@ -18,11 +18,9 @@
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Leaflet Map & Routing -->
+    <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
-    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
     
     <style type="text/tailwindcss">
         @layer utilities {
@@ -49,6 +47,9 @@
 
     <!-- Left Sidebar Toolbar -->
     <div class="sidebar-toolbar absolute top-1/2 -translate-y-1/2 left-8 z-50 pointer-events-auto flex flex-col gap-6 transition-all duration-500 origin-left">
+        <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20" id="fullscreen-btn" title="Toggle Fullscreen">
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+        </div>
         <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20" id="settings-btn" title="Control Center">
             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         </div>
@@ -135,6 +136,9 @@
                     Media Hub
                 </h2>
                 <div class="flex gap-4">
+                    <button id="btn-minimize" class="interactable bg-white/10 hover:bg-white/20 w-16 h-16 rounded-full flex items-center justify-center border border-white/20">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
+                    </button>
                     <button id="btn-close" class="interactable bg-white/10 hover:bg-white/20 w-16 h-16 rounded-full flex items-center justify-center border border-white/20">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -181,6 +185,11 @@
         </div>
         <audio id="audio-element" class="hidden"></audio>
     </div>
+    
+    <!-- Mini Player (Minimized State: Only Transparent Visualizer) -->
+    <div id="mini-player" class="absolute bottom-10 right-10 z-[100] hidden transition-all duration-300 w-48 h-24 overflow-hidden pointer-events-auto">
+        <canvas id="mini-visualizer-canvas" class="w-full h-full interactable" title="Double click to maximize"></canvas>
+    </div>
 
     <!-- Fullscreen Map Window -->
     <div id="map-window" class="absolute inset-0 z-30 pointer-events-auto flex items-center justify-center transition-all duration-500 hidden p-24">
@@ -201,12 +210,15 @@
 
             <div id="map-container" class="w-full h-full rounded-[36px] overflow-hidden"></div>
             
+            <!-- Route Options List -->
+            <div id="route-list" class="absolute top-24 left-6 z-[999] w-72 flex flex-col gap-2 pointer-events-auto max-h-[60%] overflow-y-auto scrollbar-hide"></div>
+            
             <!-- Route Info Overlay (Bottom Left) -->
             <div id="map-route-info" class="absolute bottom-6 left-6 z-[999] pointer-events-none hidden">
                 <div class="bg-black/60 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-xl flex flex-col gap-1 min-w-[200px]">
                     <div class="text-white/60 text-xs font-bold uppercase tracking-widest">Route Info</div>
                     <div id="route-distance" class="text-white text-2xl font-bold">-- km</div>
-                    <div id="route-time" class="text-blue-400 text-lg">-- min</div>
+                    <div id="route-time" class="text-blue-400 text-lg hidden">-- min</div>
                 </div>
             </div>
         </div>
@@ -224,8 +236,8 @@
             <button id="btn-map-clear" title="Clear All Markers" class="interactable bg-black/60 text-red-400 hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
-            <button id="btn-map-alt" title="Alternative Route" class="interactable bg-black/60 text-blue-400 hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20 hidden">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+            <button id="btn-map-clear" title="Clear Target" class="interactable bg-black/60 text-white hover:bg-white/20 w-20 h-16 rounded-2xl flex items-center justify-center border border-white/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
         </div>
     </div>
@@ -257,6 +269,28 @@
                 <span id="mic-status" class="tracking-widest uppercase font-semibold text-center text-lg">Auto-Listening...</span>
             </div>
             <div id="mic-options" class="w-full text-left hidden flex flex-col gap-2 mt-2 pt-4 border-t border-white/20 text-md text-white/90"></div>
+        </div>
+    </div>
+
+    <!-- Tactical Intel Panel (Sliding) -->
+    <div id="intel-panel" class="absolute bottom-[-65vh] left-0 w-full h-[60vh] glass-panel border-t-2 border-cyan-400 z-[2000] transition-all duration-500 ease-out flex flex-col pointer-events-auto">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-black/40">
+            <h2 id="intel-target-name" class="font-bold uppercase tracking-widest text-cyan-400">Tactical Intel</h2>
+            <button id="btn-intel-close" class="text-white/50 hover:text-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="flex bg-black/60 border-b border-white/10">
+            <button class="intel-tab flex-1 py-4 text-xs font-bold uppercase tracking-wider text-white/40 border-b-2 border-transparent hover:text-white active-tab" data-tab="stories">Stories</button>
+            <button class="intel-tab flex-1 py-4 text-xs font-bold uppercase tracking-wider text-white/40 border-b-2 border-transparent hover:text-white" data-tab="reviews">Reviews</button>
+            <button class="intel-tab flex-1 py-4 text-xs font-bold uppercase tracking-wider text-white/40 border-b-2 border-transparent hover:text-white" data-tab="travel">Travel Reports</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-4" id="intel-content">
+            <div class="flex items-center justify-center h-full opacity-50">
+                <span class="uppercase tracking-widest text-sm">Synchronizing Intelligence...</span>
+            </div>
         </div>
     </div>
 
