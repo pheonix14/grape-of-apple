@@ -57,7 +57,9 @@ export class MicAssistant {
                     
                     const matches = await this.mapController.searchMultipleLocations(query);
                     if (matches.length === 0) {
-                        this.statusText.innerText = `No locations found for "${query}".`;
+                        const failMsg = `No locations found for "${query}".`;
+                        this.statusText.innerText = failMsg;
+                        this.speak(failMsg);
                         setTimeout(() => this.resetToIdle(), 3000);
                     } else if (matches.length === 1) {
                         // Only 1 match, auto select and confirm
@@ -67,7 +69,9 @@ export class MicAssistant {
                         // Multiple matches
                         this.currentMatches = matches;
                         this.state = 'SELECTING';
-                        this.statusText.innerText = `I found multiple. Say 'First', 'Second', or 'Third':`;
+                        const msg = `I found multiple locations for ${query}. Say First, Second, or Third.`;
+                        this.statusText.innerText = msg;
+                        this.speak(msg);
                         this.optionsContainer.classList.remove('hidden');
                         this.optionsContainer.innerHTML = matches.map((m, i) => `<div>${i+1}. ${m.name}</div>`).join('');
                     }
@@ -98,9 +102,11 @@ export class MicAssistant {
                 }
             } else if (this.state === 'CONFIRMING') {
                 if (transcript.includes('yes') || transcript.includes('yeah') || transcript.includes('sure') || transcript.includes('route')) {
-                    this.statusText.innerText = `Routing to ${this.selectedLocation.name}...`;
+                    const okMsg = `Routing to ${this.selectedLocation.name}. Safe travels.`;
+                    this.statusText.innerText = okMsg;
+                    this.speak(okMsg);
                     this.optionsContainer.classList.add('hidden');
-                    this.mapController.routeTo(this.selectedLocation.latitude, this.selectedLocation.longitude);
+                    this.mapController.setDestination(this.selectedLocation.latitude, this.selectedLocation.longitude, this.selectedLocation.name);
                     setTimeout(() => {
                         this.resetToIdle();
                         this.stopListening();
@@ -137,7 +143,9 @@ export class MicAssistant {
     askForConfirmation() {
         this.state = 'CONFIRMING';
         this.optionsContainer.classList.add('hidden');
-        this.statusText.innerText = `Are you sure you want to route to ${this.selectedLocation.name}? Say 'Yes' or 'No'.`;
+        const text = `Are you sure you want to route to ${this.selectedLocation.name}? Say 'Yes' or 'No'.`;
+        this.statusText.innerText = text;
+        this.speak(text);
     }
 
     resetToIdle() {
@@ -154,6 +162,7 @@ export class MicAssistant {
     startListening() {
         try {
             this.recognition.start();
+            this.speak("Voice assistant active. How can I help you?");
         } catch (e) { }
     }
 
@@ -163,5 +172,29 @@ export class MicAssistant {
         this.overlay.classList.add('opacity-0');
         setTimeout(() => this.overlay.classList.add('hidden'), 500);
         this.micIconSvg.classList.remove('text-red-500');
+        this.speak("Powering down voice modules.");
+    }
+
+    speak(text) {
+        if (!window.speechSynthesis) return;
+        // Stop any current speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voices = window.speechSynthesis.getVoices();
+        
+        // Target a female-sounding voice
+        const femaleVoice = voices.find(v => 
+            v.name.includes('Female') || 
+            v.name.includes('Google US English') || 
+            v.name.includes('Samantha') || 
+            v.name.includes('Victoria') ||
+            v.name.includes('Microsoft Zira')
+        );
+        
+        if (femaleVoice) utterance.voice = femaleVoice;
+        utterance.pitch = 1.15; 
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
     }
 }

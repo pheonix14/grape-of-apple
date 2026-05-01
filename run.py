@@ -26,7 +26,10 @@ class RestartHandler(FileSystemEventHandler):
         if self.process:
             self.process.terminate()
             self.process.wait()
-        print(f"Starting FastAPI server on port {PORT}...")
+        print(f"\n" + "="*50)
+        print(f"🚀 TACTICAL OS STARTING")
+        print(f"🔗 CLICK TO OPEN: http://localhost:{PORT}")
+        print(f"="*50 + "\n")
         self.process = subprocess.Popen([sys.executable, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", str(PORT)])
 
     def on_any_event(self, event):

@@ -1,9 +1,9 @@
 import { CONFIG } from './config.js';
 
 export class MapController {
-    constructor(settingsController, intelController) {
+    constructor(settingsController) {
         this.settings = settingsController;
-        this.intel = intelController;
+        this.supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
         this.window = document.getElementById('map-window');
         this.btnClose = document.getElementById('btn-map-close');
         
@@ -13,19 +13,25 @@ export class MapController {
         this.btnLocate = document.getElementById('btn-map-locate');
         this.btnMarker = document.getElementById('btn-map-marker');
         this.btnClear = document.getElementById('btn-map-clear');
-        this.btnAlt = document.getElementById('btn-map-alt');
-        this.btnHunt = document.getElementById('btn-hunt-mode');
         this.searchInput = document.getElementById('map-search-input');
         this.btnSearch = document.getElementById('btn-map-search');
         this.routeList = document.getElementById('route-list');
+        this.searchResultsPanel = document.getElementById('map-search-results');
+        
+        // Intel Panel
+        this.intelPanel = document.getElementById('tactical-intel');
+        this.intelName = document.getElementById('intel-name');
+        this.intelCategory = document.getElementById('intel-category');
+        this.intelStories = document.getElementById('intel-stories');
+        this.intelReviews = document.getElementById('intel-reviews');
+        this.intelReports = document.getElementById('intel-reports');
 
         this.map = null;
         this.activePolylines = [];
         this.destinationMarker = null;
         this.userMarker = null;
         this.huntMarkers = [];
-        this.supabaseLocations = []; 
-        this.isHuntMode = false;
+        this.isHuntMode = true; // Always active now
         
         this.userLocation = [37.7749, -122.4194]; 
         this.isPlacementMode = false;
@@ -33,6 +39,7 @@ export class MapController {
 
         this.infoPanel = document.getElementById('map-route-info');
         this.distanceEl = document.getElementById('route-distance');
+        this.timeEl = document.getElementById('route-time');
 
         this.isOpen = false;
         this.lastPinchPos = null;
@@ -49,7 +56,6 @@ export class MapController {
             this.window.classList.add('hidden');
             this.isOpen = false;
             if (this.settings) this.settings.setAppOpen(false);
-            if (this.intel) this.intel.close();
         });
 
         if (this.btnLocate) {
@@ -68,12 +74,6 @@ export class MapController {
             });
         }
 
-        if (this.btnHunt) {
-            this.btnHunt.addEventListener('click', () => {
-                this.toggleHuntMode();
-            });
-        }
-
         if (this.btnClear) {
             this.btnClear.addEventListener('click', () => {
                 if (this.destinationMarker) this.map.removeLayer(this.destinationMarker);
@@ -82,43 +82,39 @@ export class MapController {
                 this.activePolylines = [];
                 if (this.routeList) this.routeList.innerHTML = "";
                 this.infoPanel.classList.add('hidden');
-                if (this.intel) this.intel.close();
             });
         }
 
-        if (this.btnAlt) {
-            this.btnAlt.addEventListener('click', () => this.syncWithBackend());
-            this.btnAlt.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
-            this.btnAlt.title = "Sync Tactical Intel";
-            this.btnAlt.classList.remove('hidden');
+        if (this.btnZoomIn) {
+            this.btnZoomIn.addEventListener('click', () => this.zoomInBy(1));
         }
-
-        if (this.btnZoomIn) this.btnZoomIn.addEventListener('click', () => this.zoomInBy(1));
-        if (this.btnZoomOut) this.btnZoomOut.addEventListener('click', () => this.zoomOutBy(1));
-        
+        if (this.btnZoomOut) {
+            this.btnZoomOut.addEventListener('click', () => this.zoomOutBy(1));
+        }
         if (this.btnSearch) {
             this.btnSearch.addEventListener('click', async () => {
-                const q = this.searchInput.value.trim().toLowerCase();
+                const q = this.searchInput.value.trim();
                 if (q) {
-                    const localMatch = this.supabaseLocations.find(l => 
-                        (l.name && l.name.toLowerCase().includes(q))
-                    );
-
-                    if (localMatch) {
-                        this.setDestination(localMatch.latitude, localMatch.longitude, localMatch.name, localMatch.id);
-                        return;
+                    const matches = await this.searchMultipleLocations(q);
+                    if (matches.length > 0) {
+                        const target = matches[0];
+                        this.setDestination(target.lat, target.lon, target.name, target.id, target.category);
+                        this.searchResultsPanel.classList.add('hidden');
+                    } else {
+                        this.searchExternal(q);
                     }
+                }
+            });
+        }
 
-                    try {
-                        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-                        const data = await res.json();
-                        if (data.matches && data.matches.length > 0) {
-                            const target = data.matches[0];
-                            this.setDestination(target.latitude, target.longitude, target.name, target.id);
-                        } else {
-                            this.searchExternal(q);
-                        }
-                    } catch (e) { this.searchExternal(q); }
+        if (this.searchInput) {
+            this.searchInput.addEventListener('input', async () => {
+                const q = this.searchInput.value.trim();
+                if (q.length > 1) {
+                    const matches = await this.searchMultipleLocations(q);
+                    this.showSearchResults(matches);
+                } else {
+                    this.searchResultsPanel.classList.add('hidden');
                 }
             });
         }
@@ -140,7 +136,7 @@ export class MapController {
         if (!this.map) {
             setTimeout(() => {
                 this.initMap();
-                this.loadLocationsFromBackend();
+                this.loadLocations();
             }, 300); 
         } else {
             setTimeout(() => this.map.invalidateSize(), 300);
@@ -151,7 +147,9 @@ export class MapController {
         this.map = L.map('map-container', { zoomControl: false }).setView(this.userLocation, 13);
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; CartoDB'
+            attribution: '&copy; CartoDB',
+            noWrap: true,
+            minZoom: 2
         }).addTo(this.map);
 
         const redIcon = L.divIcon({
@@ -172,70 +170,121 @@ export class MapController {
         this.map.on('zoomend', () => this.updateMarkerLabels());
 
         if (navigator.geolocation) {
+            let lastSyncTime = 0;
             navigator.geolocation.watchPosition(pos => {
+                const now = Date.now();
                 this.userLocation = [pos.coords.latitude, pos.coords.longitude];
                 if (this.userMarker) this.userMarker.setLatLng(this.userLocation);
-            });
+                
+                // Real-time GPS Sync to Supabase (Throttled to every 5 seconds)
+                if (now - lastSyncTime > 5000) {
+                    this.syncGPS(pos.coords.latitude, pos.coords.longitude);
+                    lastSyncTime = now;
+                }
+            }, err => console.error("Geolocation Error:", err), { enableHighAccuracy: true });
         }
 
         setTimeout(() => this.map.invalidateSize(), 400);
     }
 
-    async loadLocationsFromBackend() {
+    async syncGPS(lat, lng) {
         try {
-            console.log("Requesting Tactical Data from Server Proxy...");
-            const res = await fetch('/api/locations');
-            const data = await res.json();
+            const { error } = await this.supabase.from('user_tracking').upsert({
+                user_id: 'tactical_unit_1', // Default ID for tracking
+                latitude: lat,
+                longitude: lng,
+                last_updated: new Date().toISOString()
+            }, { onConflict: 'user_id' });
             
-            if (data.locations) {
-                this.supabaseLocations = data.locations;
-                const huntIcon = L.divIcon({
-                    className: 'treasure-node',
-                    html: `<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clip-rule="evenodd"></path><path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z"></path></svg>`,
-                    iconSize: [32, 32], iconAnchor: [16, 16]
-                });
-
-                data.locations.forEach(loc => {
-                    if (loc.latitude && loc.longitude) {
-                        const marker = L.marker([loc.latitude, loc.longitude], { icon: huntIcon });
-                        marker.bindTooltip(loc.name || 'Sector', { 
-                            permanent: true, direction: 'top', className: 'tactical-label neon-label', offset: [0, -15]
-                        });
-                        marker.on('click', (e) => {
-                            L.DomEvent.stopPropagation(e);
-                            this.setDestination(loc.latitude, loc.longitude, loc.name, loc.id);
-                        });
-                        this.huntMarkers.push({ marker, data: loc });
-                    }
-                });
-                
-                if (this.isHuntMode) this.huntMarkers.forEach(hm => hm.marker.addTo(this.map));
-                this.updateMarkerLabels();
-            }
-        } catch (e) { console.error("Neural data link failed."); }
+            if (!error) console.log("📡 GPS Synchronized to Command Center");
+            else console.error("GPS Sync Error:", error);
+        } catch (e) { console.error("Supabase GPS Failure:", e); }
     }
 
-    toggleHuntMode() {
-        this.isHuntMode = !this.isHuntMode;
-        this.btnHunt.classList.toggle('bg-green-500/40', this.isHuntMode);
-        if (this.isHuntMode) this.huntMarkers.forEach(hm => hm.marker.addTo(this.map));
-        else this.huntMarkers.forEach(hm => this.map.removeLayer(hm.marker));
+    async loadLocations() {
+        try {
+            console.log("Syncing Tactical Sectors from Supabase...");
+            const { data: locations, error } = await this.supabase.from('locations').select('*');
+            
+            if (error) {
+                console.error("Supabase Error:", error);
+                return;
+            }
+
+            if (locations) {
+                console.log(`Neural Link established: ${locations.length} sectors detected.`);
+                
+                // STATIC GREEN DOT ICON (High Visibility, No Animation)
+                const huntIcon = L.divIcon({
+                    className: 'static-green-dot',
+                    html: '<div style="background-color:#00ff88; width:10px; height:10px; border-radius:50%; border:2px solid white; box-shadow:0 0 8px #00ff88;"></div>',
+                    iconSize: [12, 12], iconAnchor: [6, 6]
+                });
+
+                const markersForBounds = [];
+                locations.forEach(loc => {
+                    if (loc.lat && loc.lon) {
+                        const marker = L.marker([loc.lat, loc.lon], { icon: huntIcon });
+                        
+                        // Permanent Neon Label
+                        marker.bindTooltip(loc.name || 'Sector', { 
+                            permanent: true, 
+                            direction: 'top',
+                            className: 'neon-label',
+                            offset: [0, -15]
+                        });
+                        
+                        const popupContent = `
+                            <div style="text-align:center; min-width:150px;">
+                                <b style="color:#ccff00; font-size:14px; text-transform:uppercase; font-family:'Syncopate';">${loc.name}</b>
+                                <div style="margin:8px 0; color:#00f2ff; font-weight:bold; font-size:12px; font-family:'Space Grotesk';">
+                                    <i class="fas fa-gem"></i> ${loc.reward_per_visit || 50} Gold
+                                </div>
+                                <button class="popup-btn" style="background:#bc13fe; color:#fff;" onclick="window.mapController.setDestination(${loc.lat}, ${loc.lon}, '${loc.name.replace(/'/g, "\\'")}', '${loc.id}', '${loc.category}')">
+                                    <i class="fas fa-info-circle"></i> VIEW INFO
+                                </button>
+                                <button class="popup-btn" style="background:#ccff00; color:#000; font-weight:bold;" onclick="window.mapController.setDestination(${loc.lat}, ${loc.lon}, '${loc.name.replace(/'/g, "\\'")}', '${loc.id}', '${loc.category}')">
+                                    <i class="fas fa-crosshairs"></i> SET DESTINATION
+                                </button>
+                            </div>
+                        `;
+                        marker.bindPopup(popupContent);
+
+                        marker.on('click', (e) => {
+                            L.DomEvent.stopPropagation(e);
+                            // We use the buttons in the popup now
+                        });
+
+                        marker.addTo(this.map); 
+                        this.huntMarkers.push({ marker, data: loc });
+                        markersForBounds.push([loc.lat, loc.lon]);
+                    }
+                });
+
+                if (markersForBounds.length > 0) {
+                    const bounds = L.latLngBounds(markersForBounds);
+                    this.map.fitBounds(bounds, { padding: [50, 50] });
+                }
+                
+                this.updateMarkerLabels();
+            }
+        } catch (e) { console.error("Neural loading failure:", e); }
     }
 
     updateMarkerLabels() {
         if (!this.map) return;
         const zoom = this.map.getZoom();
-        const showLabels = zoom <= 12;
+        const showLabels = zoom >= 13; 
         this.huntMarkers.forEach(hm => {
-            if (showLabels && this.isHuntMode) hm.marker.openTooltip();
+            if (showLabels) hm.marker.openTooltip();
             else hm.marker.closeTooltip();
         });
     }
 
-    setDestination(lat, lng, name = "Target Locked", locId = null) {
+    setDestination(lat, lng, name = "Target Locked", locId = null, category = "Tactical Sector") {
         if (!this.map) return;
         if (this.destinationMarker) this.map.removeLayer(this.destinationMarker);
-        
+
         const blueIcon = L.divIcon({
             className: 'custom-div-icon',
             html: '<div style="color:#00d2ff; font-size:32px; filter:drop-shadow(0 0 10px #00d2ff);"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg></div>',
@@ -244,7 +293,13 @@ export class MapController {
 
         this.destinationMarker = L.marker([lat, lng], { icon: blueIcon, draggable: true }).addTo(this.map);
         this.destinationMarker.bindPopup(`<b>${name}</b><br>Tactical route updated.`).openPopup();
-        this.selectedDestination = { lat, lng, name, id: locId };
+        this.selectedDestination = { lat, lng, name };
+
+        if (locId) {
+            this.loadTacticalIntel(locId, name, category);
+        } else {
+            this.intelPanel.classList.add('hidden');
+        }
 
         this.destinationMarker.on('dragend', (e) => {
             const pos = e.target.getLatLng();
@@ -255,13 +310,38 @@ export class MapController {
 
         this.generatePaths(lat, lng);
         this.map.flyTo([lat, lng], 14);
+    }
 
-        // AUTO-LOAD INTEL FOR LOCKED LOCATION
-        if (locId && this.intel) {
-            this.intel.loadIntel(locId, name);
-        } else if (this.intel) {
-            this.intel.close();
-        }
+    async loadTacticalIntel(locId, name, category) {
+        this.intelPanel.classList.remove('hidden');
+        this.intelName.innerText = name;
+        this.intelCategory.innerText = category || "Tactical Sector";
+        
+        // Clear previous
+        this.intelStories.innerHTML = '<div class="text-xs opacity-50">Loading Lore...</div>';
+        this.intelReviews.innerHTML = '<div class="text-xs opacity-50">Scanning SITREPs...</div>';
+        this.intelReports.innerHTML = '<div class="text-xs opacity-50">Checking Logistics...</div>';
+
+        // 1. Stories
+        this.supabase.from('stories').select('*').eq('loc_id', locId).then(({ data }) => {
+            this.intelStories.innerHTML = data && data.length > 0 
+                ? data.map(s => `<div class="bg-white/5 p-3 rounded-2xl border border-white/5"><div class="font-bold text-xs mb-1">${s.title}</div><div class="text-[10px] opacity-70">${s.content}</div></div>`).join('')
+                : '<div class="text-xs opacity-30 italic">No lore archived for this sector.</div>';
+        });
+
+        // 2. Reviews (SITREPs)
+        this.supabase.from('reviews').select('*').eq('location_id', locId).then(({ data }) => {
+            this.intelReviews.innerHTML = data && data.length > 0 
+                ? data.map(r => `<div class="bg-white/5 p-3 rounded-2xl border border-white/5"><div class="flex justify-between font-bold text-[10px] mb-1"><span>${r.user_id}</span><span>${'★'.repeat(r.rating)}</span></div><div class="text-[10px] opacity-70">${r.content}</div></div>`).join('')
+                : '<div class="text-xs opacity-30 italic">No field reports available.</div>';
+        });
+
+        // 3. Travel Reports (Logistics)
+        this.supabase.from('travel_reports').select('*').eq('loc_id', locId).then(({ data }) => {
+            this.intelReports.innerHTML = data && data.length > 0 
+                ? data.map(tr => `<div class="bg-white/5 p-3 rounded-2xl border border-white/5"><div class="flex justify-between text-[10px] font-bold"><span>${tr.vehicle || 'Transport'}</span><span>${tr.fare} ${tr.currency}</span></div><div class="text-[10px] opacity-70">${tr.origin_name} ➔ ${tr.dest_name}</div></div>`).join('')
+                : '<div class="text-xs opacity-30 italic">No transport data found.</div>';
+        });
     }
 
     async generatePaths(lat, lng) {
@@ -270,6 +350,7 @@ export class MapController {
         this.activePolylines.forEach(p => this.map.removeLayer(p));
         this.activePolylines = [];
         if (this.routeList) this.routeList.innerHTML = "";
+
         for (const mode of modes) {
             const url = `https://router.project-osrm.org/route/v1/${mode.id}/${this.userLocation[1]},${this.userLocation[0]};${lng},${lat}?overview=full&geometries=geojson&alternatives=true`;
             try {
@@ -314,6 +395,7 @@ export class MapController {
         this.infoPanel.classList.remove('hidden');
         const dist = (route.distance / 1000).toFixed(1);
         this.distanceEl.innerText = `${dist} km`;
+        if (this.timeEl) this.timeEl.classList.add('hidden');
     }
 
     async searchExternal(query) {
@@ -324,20 +406,66 @@ export class MapController {
         } catch (e) { console.error(e); }
     }
 
-    async syncWithBackend() {
+    async syncWithSupabase() {
+        // This is now legacy/automatic but kept for reference if needed
         if (!this.selectedDestination) return;
         try {
-            const res = await fetch('/api/sync-mission', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: 1, target_lat: this.selectedDestination.lat, target_lng: this.selectedDestination.lng,
-                    target_name: this.selectedDestination.name, updated_at: new Date().toISOString()
-                })
+            await this.supabase.from('missions').upsert({
+                id: 1, target_lat: this.selectedDestination.lat, target_lng: this.selectedDestination.lng,
+                target_name: this.selectedDestination.name, updated_at: new Date()
             });
-            const data = await res.json();
-            if (data.status) console.log("Backend Sync Success:", data.status);
-        } catch (e) { console.error("Neural sync failed."); }
+        } catch (e) { console.error("Sync Failed:", e); }
+    }
+
+    async searchMultipleLocations(query) {
+        if (!query || query.length < 2) return [];
+        try {
+            // Updated for User Schema: Removed 'description', added 'category'
+            const filter = `name.ilike.%${query}%,category.ilike.%${query}%`;
+            
+            const { data, error } = await this.supabase
+                .from('locations')
+                .select('*')
+                .or(filter)
+                .limit(10);
+
+            if (error) {
+                console.error("Supabase Search Error:", error.message, error.details);
+                // Fallback to name-only search
+                const { data: fallbackData } = await this.supabase
+                    .from('locations')
+                    .select('*')
+                    .ilike('name', `%${query}%`)
+                    .limit(10);
+                return fallbackData || [];
+            }
+
+            return data || [];
+        } catch (e) {
+            console.error("Search execution failed:", e);
+            return [];
+        }
+    }
+
+    showSearchResults(matches) {
+        if (!this.searchResultsPanel) return;
+        this.searchResultsPanel.innerHTML = "";
+        if (matches.length > 0) {
+            this.searchResultsPanel.classList.remove('hidden');
+            matches.forEach(loc => {
+                const div = document.createElement('div');
+                div.className = "glass-panel p-3 rounded-xl border border-white/10 hover:bg-white/20 cursor-pointer text-sm font-bold transition-all";
+                div.innerText = loc.name;
+                div.onclick = () => {
+                    this.setDestination(loc.lat, loc.lon, loc.name, loc.id, loc.category);
+                    this.searchResultsPanel.classList.add('hidden');
+                    this.searchInput.value = loc.name;
+                };
+                this.searchResultsPanel.appendChild(div);
+            });
+        } else {
+            this.searchResultsPanel.classList.add('hidden');
+        }
     }
 
     handleHandGesture(hand) {
