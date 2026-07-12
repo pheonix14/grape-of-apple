@@ -1,0 +1,36 @@
+/* --- Orbital Lock (Drag Mode) --- */
+.orbital-lock-active {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.6) !important;
+    animation: orbital-pulse 1.5s infinite alternate ease-in-out;
+    cursor: grabbing;
+}
+
+@keyframes orbital-pulse {
+    from { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+    to { box-shadow: 0 0 50px rgba(59, 130, 246, 0.8); }
+}
+
+/* --- DYNAMIC BUTTON SKINS --- */
+body.skin-ares-rb .interactable { background: rgba(255, 0, 60, 0.1) !important; border-color: #ff003c !important; color: #ff003c !important; }
+body.skin-ares-blue .interactable { background: rgba(0, 100, 255, 0.1) !important; border-color: #0064ff !important; color: #0064ff !important; }
+body.skin-ares-rw .interactable { background: rgba(255, 255, 255, 0.1) !important; border-color: #ff003c !important; color: #ff003c !important; }
+body.skin-legacy .interactable { background: rgba(0, 255, 255, 0.1) !important; border-color: #0ff !important; color: #0ff !important; }
+
+/* --- TRON LEGACY GRID VIBE --- */
+body.tron-legacy-grid::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    background-image: 
+        linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 80px 80px;
+    background-position: center center;
+    perspective: 1000px;
+    transform: rotateX(60deg) scale(2);
+    transform-origin: center bottom;
+    opacity: 0.3;
+}
