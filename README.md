@@ -1,91 +1,56 @@
-# 🍇 Grape AR OS - TreasureGrape Ultimate
+# Tactical Intelligence Hub: Neural AR OS
 
-![Status](https://img.shields.io/badge/Status-Beta-blueviolet?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Platform-Web%20%7C%20Mobile%20%7C%20AR-orange?style=for-the-badge)
+![Tactical AR Interface](https://img.shields.io/badge/OS-Spatial-blue?style=for-the-badge)
+![Tech Stack](https://img.shields.io/badge/Stack-Flask%20%7C%20JS%20%7C%20Tailwind-green?style=for-the-badge)
+![Hand Tracking](https://img.shields.io/badge/Tracking-MediaPipe-orange?style=for-the-badge)
 
-**Grape AR OS** (TreasureGrape Ultimate) is a high-performance, spatial computing interface designed for the next generation of augmented reality experiences. Built with a focus on glass-morphism aesthetics and tactical intelligence, it transforms your browser into a futuristic command center.
-
----
-
-## 🚀 Key Features
-
-### 🎵 Media Hub (Music & Visuals)
-- **Intelligent Audio**: High-fidelity music playback with real-time frequency visualizers.
-- **YouTube Integration**: Stream audio directly from YouTube links.
-- **Local Uploads**: Drag and drop your own `.mp3`, `.wav`, or `.ogg` tracks.
-- **Tactical Mini-Player**: A minimized, non-intrusive visualizer for background playback.
-
-### 🗺️ Spatial Intelligence Map
-- **Sector Intel**: Real-time data fetching for locations, including "Mission Stories" and "Tactical Logistics".
-- ** Search**: Fast, intelligent search for identifying sectors and points of interest.
-- **Route Navigation**: Integrated distance and time arrival profiles for tactical movement.
-- **Supabase Powered**: Dynamic marker loading and data persistence.
-
-### 🧤 Spatial Hand Tracking
-- **MediaPipe Powered**: Low-latency hand tracking for gesture-based interactions.
-- **Touchless UI**: Interact with floating panels using spatial pinches and movements.
-- **Mirror Mode**: Configurable camera streams for optimal tracking alignment.
-
-### 🕶️ Stereoscopic (Cardboard) Mode
-- **Dual Viewport**: Optimized side-by-side rendering for mobile VR/AR headsets.
-- **Lensless Calibration**: Precision IPD (Inter-Pupillary Distance) and vertical offset controls for "8cm optimization".
-- **Engage Cockpit**: Immersive wrap-around interface for a pilot-like experience.
+A high-performance, spatial operating system designed for lensless **8cm Stereoscopic AR** viewing. This project transforms a mobile or desktop interface into an immersive tactical HUD with real-time hand tracking, voice assistant integration, and wrap-around 3D environments.
 
 ---
 
-## 🛠️ Technical Stack
+## 🚀 Core Features
 
-- **Backend**: FastAPI (Python) - High-performance asynchronous API.
-- **Frontend**: 
-  - **HTML5/CSS3**: Vanilla CSS with Tailwind CSS utilities.
-  - **JavaScript**: Modular, vanilla JS for core logic.
-  - **MediaPipe**: Hand tracking and computer vision.
-  - **Leaflet.js**: Interactive mapping engine.
-  - **Supabase**: Backend-as-a-Service for real-time data.
+### 1. **Stereoscopic AR Engine**
+- **Parallel-Stream Architecture**: Dual video/canvas layers eliminate DOM conflicts, providing a stable 3D view for AR boxes.
+- **8cm Physics Calibration**: Specialized IPD and convergence management for near-field direct viewing.
+- **Neural Mirroring**: Dynamic coordinate mapping ensures hand-tracking remains synchronized whether mirroring is active or disabled.
 
----
+### 2. **Neural Hand Tracking**
+- **Gesture Navigation**: Interact with panels via high-precision "Pinching" (Index + Thumb).
+- **Spatial Cursor**: Dual-projected cursors for stereoscopic accuracy in AR mode.
+- **Panel Tilt Physics**: UI panels react dynamically to hand position, providing depth and tactile feedback.
 
-## 📁 Project Structure (A-Z)
+### 3. **Pilot Room (Cockpit Mode)**
+- **Concave HUD**: A 1200px perspective engine that angles the side panels 30 degrees toward the center.
+- **Flight Instrumentation**: Includes a tactical grid overlay and a centered focus crosshair for high-speed navigation.
 
-| File / Directory | Purpose |
-| :--- | :--- |
-| `main.py` | FastAPI server entry point. Handles static serving and Media API. |
-| `run.py` | Development server runner with port configuration. |
-| `Dockerfile` | Containerization configuration for reproducible environments. |
-| `Procfile` | Process file for cloud platform deployments (e.g., Heroku). |
-| `render.yaml` | Infrastructure-as-Code for Render.com deployment. |
-| `wasmer.toml` | WebAssembly runtime configuration. |
-| `static/index.html` | The main spatial dashboard and UI architecture. |
-| `static/css/style.css` | Core design system, glass-morphism, and animations. |
-| `static/js/cardboard.js` | Stereoscopic rendering and VR calibration logic. |
-| `static/js/keyboard.js` | Neural Input Deck (Virtual Keyboard) implementation. |
-| `static/js/main.js` | System bootstrapper and core initialization. |
-| `static/js/map.js` | Spatial Map logic, Supabase integration, and Route Intel. |
-| `static/js/mic.js` | Voice interface and microphone processing. |
-| `static/js/music.js` | Media Hub logic, YouTube loading, and Visualizer engine. |
-| `static/js/settings.js` | Control Center logic, scaling, and theme management. |
-| `static/js/tracker.js` | MediaPipe hand tracking and gesture recognition. |
-| `static/js/ui.js` | UI utility functions and window management. |
-| `static/media/` | Pre-loaded tactical tracks (Daft Funk, Nine Inch Nails). |
+### 4. **Neural Voice Assistant**
+- **Synchronized Persona**: Locked to a high-quality female synthesis profile with situational awareness logic.
+- **Minimized HUD**: Compact transcription overlay that prioritizes screen real-estate for mission data.
+
+### 5. **Media & Intelligence Hubs**
+- **Media Hub**: High-fidelity glass-morphism player with audio visualizers and YouTube stream support.
+- **Tactical Map**: Real-time location intelligence with pulsing sector nodes and route planning.
 
 ---
 
-## 🎹 Music Library (Default)
+## 🛠️ Technology Stack
 
-The system comes pre-loaded with high-energy tactical audio:
-1. **Daft Funk** - End Of Line
-2. **Nine Inch Nails** - As Alive As You Need Me To Be
-3. **Nine Inch Nails** - Init (Visualizer Mix)
+- **Backend**: Python (Flask)
+- **Frontend**: HTML5, Tailwind CSS (JIT), Vanilla JavaScript
+- **Hand Tracking**: Google MediaPipe (Hands)
+- **Voice Engine**: Web Speech API
+- **Mapping**: Leaflet.js
+- **Styling**: Vision Pro Inspired Glass-morphism
 
 ---
 
-## ⚙️ Installation & Setup
+## 🔧 Installation & Setup
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/grape-ar-os.git
-   cd grape-ar-os
+   git clone [repository-url]
+   cd tactical-intel-hub
    ```
 
 2. **Install Dependencies**:
@@ -93,27 +58,36 @@ The system comes pre-loaded with high-energy tactical audio:
    pip install -r requirements.txt
    ```
 
-3. **Run the Application**:
+3. **Launch the OS**:
    ```bash
    python run.py
    ```
-   *Access the OS at `http://localhost:8000`*
+
+4. **Access the HUD**:
+   Open your browser to `http://localhost:5000` (or the IP address of your host machine for mobile testing).
 
 ---
 
-## 🎨 Themes
-- **Normal**: Clean, high-transparency glass.
-- **Legacy**: Neon cyan aesthetics.
-- **Ares RB**: Tactical Red & Black high-contrast.
-- **Ares RW/BW**: Minimalist Red/Blue on White.
+## 📱 Optimization Notes
+
+- **Mobile Landscape**: The system includes a **Neural Landscape Protocol** that automatically reconfigures icons, text, and panel dimensions when the device is rotated.
+- **AR Box Mode**: For best results, use a direct-viewing AR box with an 8cm focal distance. Engagement is controlled via the **Control Center**.
 
 ---
 
-## 📜 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📂 Architecture
+
+- `static/js/main.js`: Core initialization and gesture/coordinate synchronization.
+- `static/js/tracker.js`: MediaPipe hand tracking implementation.
+- `static/js/ui.js`: Spatial cursor and panel interaction logic.
+- `static/js/cardboard.js`: Stereoscopic parallel-stream management.
+- `static/js/mic.js`: Voice synthesis and recognition engine.
+- `static/css/style.css`: 3D transformations, themes (Ares/Legacy), and cockpit mode.
 
 ---
-*Generated by pheonix14 for Grape AR OS Dev Team.*
+
+## 🛡️ License
+Distributed under the MIT License. See `LICENSE` for more information.
 
 
 *developed by pheonix14*
