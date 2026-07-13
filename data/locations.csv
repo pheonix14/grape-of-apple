@@ -1,0 +1,6 @@
+id,name,lat,lon,category,reward_per_visit
+1,New Delhi,28.6139,77.2090,CAPITAL,1000
+2,Mumbai,19.0760,72.8777,METROPOLIS,800
+3,Bangalore,12.9716,77.5946,TECH HUB,600
+4,Chennai,13.0827,80.2707,COASTAL,500
+5,Kolkata,22.5726,88.3639,CULTURAL,500

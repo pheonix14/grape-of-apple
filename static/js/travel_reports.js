@@ -2,7 +2,6 @@ import { CONFIG } from './config.js';
 
 export class TravelReports {
     constructor(persistence) {
-        this.supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
         this.persistence = persistence;
         
         this.panel = document.getElementById('travel-reports-panel');
@@ -123,8 +122,8 @@ export class TravelReports {
             }
 
             const [uLat, uLon] = map.userLocation;
-            const { data: locations, error: locError } = await this.supabase.from('locations').select('*');
-            if (locError) throw locError;
+            const res = await fetch('/api/locations');
+            const locations = await res.json();
 
             let nearest = null;
             let minDist = Infinity;
@@ -150,7 +149,7 @@ export class TravelReports {
                 this.persistence.saveData();
             }
 
-            this.fetchReports(nearest.id);
+            this.fetchReports(nearest.name);
 
         } catch (err) {
             this.showError(err.message);
@@ -163,13 +162,9 @@ export class TravelReports {
 
         this.showLoading();
         try {
-            const { data: locations, error: locError } = await this.supabase
-                .from('locations')
-                .select('*')
-                .ilike('name', `%${query}%`)
-                .limit(1);
-
-            if (locError) throw locError;
+            const res = await fetch('/api/locations');
+            const allLocations = await res.json();
+            const locations = allLocations.filter(l => l.name.toLowerCase().includes(query.toLowerCase())).slice(0,1);
 
             if (!locations || locations.length === 0) {
                 this.locationName.innerText = "SECTOR NOT FOUND";
@@ -187,22 +182,31 @@ export class TravelReports {
                 this.persistence.saveData();
             }
 
-            this.fetchReports(target.id);
+            this.fetchReports(target.name);
 
         } catch (err) {
             this.showError(err.message);
         }
     }
 
-    async fetchReports(locId) {
+    async fetchReports(locName) {
         try {
-            const { data: reports, error } = await this.supabase
-                .from('travel_reports')
-                .select('*')
-                .eq('loc_id', locId)
-                .order('created_at', { ascending: false });
+            const res = await fetch('/api/travel-reports');
+            const txns = await res.json();
+            
+            // Map transactions matching this location to the reports UI format
+            const reports = txns
+                .filter(t => t.details && t.details.toLowerCase().includes(locName.toLowerCase()))
+                .map(t => ({
+                    vehicle: 'Transaction',
+                    origin_name: 'Reward',
+                    dest_name: t.category,
+                    fare: t.amount,
+                    currency: 'G',
+                    created_at: t.timestamp,
+                    note: t.details
+                }));
 
-            if (error) throw error;
             this.renderReports(reports);
         } catch (err) {
             this.showError(err.message);

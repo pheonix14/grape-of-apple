@@ -22,6 +22,12 @@ export class SettingsController {
         this.bgColor = '#000000';
         this.bgImage = null;
         this.isPrivacyMode = false;
+        
+        // Captions
+        this.captionsEnabled = true;
+        this.captionSize = 16;
+        this.captionOpacity = 0.8;
+        this.captionBg = 'glass';
 
         this.bindEvents();
         this.loadSettings(); // Load from Local or Backend
@@ -63,12 +69,19 @@ export class SettingsController {
         if (data.bgColor) this.bgColor = data.bgColor;
         if (data.bgImage !== undefined) this.bgImage = data.bgImage;
         if (data.isPrivacyMode !== undefined) this.isPrivacyMode = data.isPrivacyMode;
+        if (data.captionsEnabled !== undefined) this.captionsEnabled = data.captionsEnabled;
+        if (data.captionSize !== undefined) this.captionSize = data.captionSize;
+        if (data.captionOpacity !== undefined) this.captionOpacity = data.captionOpacity;
+        if (data.captionBg !== undefined) this.captionBg = data.captionBg;
         
         this.applyTheme(data.activeTheme !== undefined ? data.activeTheme : null);
         this.applySkin(data.activeSkin !== undefined ? data.activeSkin : null);
         
         if (this.gridFilter) document.body.classList.add('tron-legacy-grid');
         if (this.cockpitMode) document.body.classList.add('cockpit-mode');
+        
+        this.updateCaptionUI();
+        this.applyCaptionStyles();
     }
 
     async saveSettings() {
@@ -84,7 +97,11 @@ export class SettingsController {
             borderColor: this.borderColor,
             bgColor: this.bgColor,
             bgImage: this.bgImage,
-            isPrivacyMode: this.isPrivacyMode
+            isPrivacyMode: this.isPrivacyMode,
+            captionsEnabled: this.captionsEnabled,
+            captionSize: this.captionSize,
+            captionOpacity: this.captionOpacity,
+            captionBg: this.captionBg
         };
 
         // Save Local
@@ -170,14 +187,52 @@ export class SettingsController {
                 this.saveSettings();
             });
         }
-
-        const cockpitBtn = document.getElementById('btn-cockpit-toggle');
-        if (cockpitBtn) {
-            cockpitBtn.addEventListener('click', () => {
+        // Cockpit Mode
+        const btnCockpit = document.getElementById('btn-cockpit-toggle');
+        if (btnCockpit) {
+            btnCockpit.addEventListener('click', () => {
                 this.cockpitMode = !this.cockpitMode;
-                document.body.classList.toggle('cockpit-mode', this.cockpitMode);
-                cockpitBtn.innerText = this.cockpitMode ? 'Disengage Cockpit' : 'Engage Cockpit';
-                cockpitBtn.classList.toggle('bg-blue-500/40', this.cockpitMode);
+                if (this.cockpitMode) {
+                    document.body.classList.add('cockpit-mode');
+                } else {
+                    document.body.classList.remove('cockpit-mode');
+                }
+                this.saveSettings();
+            });
+        }
+        
+        // Caption Settings
+        const btnCaptionToggle = document.getElementById('btn-caption-toggle');
+        const rangeCaptionSize = document.getElementById('range-caption-size');
+        const rangeCaptionOpacity = document.getElementById('range-caption-opacity');
+        const selectCaptionBg = document.getElementById('select-caption-bg');
+
+        if (btnCaptionToggle) {
+            btnCaptionToggle.addEventListener('click', () => {
+                this.captionsEnabled = !this.captionsEnabled;
+                this.updateCaptionUI();
+                this.applyCaptionStyles();
+                this.saveSettings();
+            });
+        }
+        if (rangeCaptionSize) {
+            rangeCaptionSize.addEventListener('input', (e) => {
+                this.captionSize = parseInt(e.target.value);
+                this.applyCaptionStyles();
+            });
+            rangeCaptionSize.addEventListener('change', () => this.saveSettings());
+        }
+        if (rangeCaptionOpacity) {
+            rangeCaptionOpacity.addEventListener('input', (e) => {
+                this.captionOpacity = parseFloat(e.target.value);
+                this.applyCaptionStyles();
+            });
+            rangeCaptionOpacity.addEventListener('change', () => this.saveSettings());
+        }
+        if (selectCaptionBg) {
+            selectCaptionBg.addEventListener('change', (e) => {
+                this.captionBg = e.target.value;
+                this.applyCaptionStyles();
                 this.saveSettings();
             });
         }

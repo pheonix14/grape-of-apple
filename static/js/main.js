@@ -13,6 +13,7 @@ import { CompassController } from './compass.js';
 import { AuthController } from './auth.js';
 import { RewardEngine } from './rewards.js';
 import { MessageHub } from './messages.js';
+import { AIController } from './ai.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const videoElement = document.getElementById('input_video');
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let travelReports = null;
     let compass = null;
     let auth = null;
+    let aiHub = null;
 
     const initMap = () => {
         if (!map) {
@@ -101,6 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return auth;
     };
 
+    const initAIHub = () => {
+        if (!aiHub) {
+            console.log('[SYSTEM] LAZY LOADING AI INTEL HUB...');
+            aiHub = new AIController(settings);
+            window.aiController = aiHub;
+            persistence.trackAppOpen('ai-hub');
+        }
+        aiHub.open();
+        return aiHub;
+    };
+
     // Pre-load top-used apps to prevent lag if they are common
     if (persistence.isTopUsed('map')) initMap();
     if (persistence.isTopUsed('music')) initMusic();
@@ -115,14 +128,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (app === 'travel-reports') initTravelReports();
             if (app === 'compass') window.initCompass();
             if (app === 'auth') initAuth();
+            if (app === 'ai-hub') initAIHub();
         });
     });
 
     const micBtn = document.getElementById('btn-mic-toggle');
     if (micBtn) {
         micBtn.addEventListener('click', () => {
-            const m = initMic();
-            if (m) m.toggle();
+            const ai = initAIHub();
+            if (ai.btnStt) {
+                // If it's closed, open it and click STT. If it's already listening, stop it.
+                ai.btnStt.click();
+            }
         });
     }
 

@@ -1,0 +1,2 @@
+user_id,password,points,level,is_admin,is_guide
+test1,pwd,1100,1,False,False

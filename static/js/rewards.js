@@ -7,13 +7,10 @@ export class RewardEngine {
         this.notificationHub = document.getElementById('notification-hub');
         this.goldHUD = document.getElementById('gold-hud');
         
-        // Initialize Supabase
-        this.supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
-        
+        // Initialize polling intervals
         this.lastCheck = 0;
         this.checkInterval = 30000; // 30 seconds
-        this.isSubscribed = false;
-        this.channel = null;
+        this.pollInterval = null;
         this.init();
     }
 
@@ -40,33 +37,54 @@ export class RewardEngine {
 
     setupRealtimeSync() {
         const savedUser = localStorage.getItem('grape_os_user');
-        if (!savedUser || this.isSubscribed) return;
-        const user = JSON.parse(savedUser);
+        if (!savedUser) return;
+        
+        if (this.pollInterval) clearInterval(this.pollInterval);
+        
+        this.pollInterval = setInterval(async () => {
+            await this.updateLiveBalance();
+            await this.checkSystemUpdates();
+        }, 15000); // 15 seconds polling
+    }
 
-        // Subscribe to changes on users table for this specific user
-        this.channel = this.supabase
-            .channel(`public:users:${user.user_id}`)
-            .on('postgres_changes', { 
-                event: 'UPDATE', 
-                schema: 'public', 
-                table: 'users',
-                filter: `user_id=eq.${user.user_id}`
-            }, (payload) => {
-                if (payload.new && payload.new.points !== undefined) {
-                    this.updateUI(payload.new.points);
-                }
-            })
-            .subscribe();
-            
-        this.isSubscribed = true;
+    async checkSystemUpdates() {
+        try {
+            const res = await fetch('/api/system/check-updates');
+            const data = await res.json();
+            if (data.status === 'updated') {
+                this.showNotification({
+                    name: 'SYSTEM UPDATE ARCHIVED',
+                    reward: 0
+                }, 'REWARD'); // REWARD type handles text differently, let's just use it or we could add a new type.
+                
+                // Let's create a custom SYSTEM notification
+                const notif = document.createElement('div');
+                notif.className = "glass-panel p-4 rounded-2xl border border-purple-500/40 bg-purple-500/10 shadow-[0_0_30px_rgba(168,85,247,0.2)] flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500 pointer-events-auto";
+                notif.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center shadow-[0_0_15px_#a855f7]">
+                        <svg class="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-black text-purple-500 uppercase tracking-widest">SYSTEM UPDATE</span>
+                        <span class="text-xs font-bold text-white uppercase">REPO SYNCED</span>
+                        <span class="text-[9px] text-green-400 font-bold tracking-widest">RELOADING UI...</span>
+                    </div>
+                `;
+                if(this.notificationHub) this.notificationHub.appendChild(notif);
+                setTimeout(() => window.location.reload(), 3000);
+            }
+        } catch (e) {
+            console.error("Update check failed", e);
+        }
     }
 
     reset() {
-        if (this.channel) {
-            this.supabase.removeChannel(this.channel);
-            this.channel = null;
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
         }
-        this.isSubscribed = false;
         this.updateUI(0);
     }
 

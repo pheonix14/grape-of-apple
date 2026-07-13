@@ -1,0 +1,2 @@
+txn_id,user_id,amount,category,details,timestamp
+TXN-CDACB32B,test1,1000,REWARD_PROXIMITY,Proximity Reward: New Delhi,2026-07-13T19:10:50.981746Z

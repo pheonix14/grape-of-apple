@@ -26,27 +26,16 @@ export class MessageHub {
 
         try {
             const user = JSON.parse(savedUser);
-            const supabase = window.supabase?.createClient ?
-                window.supabase.createClient(window.CONFIG?.SUPABASE_URL || '', window.CONFIG?.SUPABASE_KEY || '') :
-                (window.mapController?.supabase);
+            const res = await fetch('/api/travel-reports');
+            const allTxns = await res.json();
+            
+            // Filter by user and order by timestamp descending
+            const userTxns = allTxns
+                .filter(t => t.user_id === user.user_id)
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, 5);
 
-            if (supabase) {
-                const { data, error } = await supabase
-                    .from('transactions')
-                    .select('details, amount, timestamp')
-                    .eq('user_id', user.user_id)
-                    .order('timestamp', { ascending: false })
-                    .limit(5);
-
-                if (!error && data) {
-                    this.renderMessages(data);
-                } else {
-                    this.renderMessages([]);
-                }
-            } else {
-                console.warn("Supabase client not initialized for messages");
-                this.renderMessages([]);
-            }
+            this.renderMessages(userTxns);
         } catch (e) {
             console.error("Message Sync Failed:", e);
             this.renderMessages([]);

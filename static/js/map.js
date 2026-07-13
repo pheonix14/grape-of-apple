@@ -3,7 +3,6 @@ import { CONFIG } from './config.js';
 export class MapController {
     constructor(settingsController) {
         this.settings = settingsController;
-        this.supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
         this.window = document.getElementById('map-window');
         this.btnClose = document.getElementById('btn-map-close');
         
@@ -418,34 +417,15 @@ export class MapController {
         if (window.rewardEngine) {
             window.rewardEngine.checkProximity(lat, lng);
         }
-
-        try {
-            const { error } = await this.supabase.from('user_tracking').upsert({
-                user_id: userId,
-                latitude: lat,
-                longitude: lng,
-                last_updated: new Date().toISOString()
-            }, { onConflict: 'user_id' });
-            
-            if (!error) console.log("📡 GPS Synchronized to Command Center");
-            else console.error("GPS Sync Error:", error);
-        } catch (e) { console.error("Supabase GPS Failure:", e); }
+        // GPS data is already sent via Rewards Engine proximity checks, no separate tracking needed.
     }
 
     async loadLocations() {
         try {
-            console.log("Syncing Tactical Sectors from Supabase...");
-            // Limit to 100 locations as requested
-            const { data: locations, error } = await this.supabase
-                .from('locations')
-                .select('*')
-                .limit(100);
+            console.log("Syncing Tactical Sectors from CSV...");
+            const res = await fetch('/api/locations');
+            const locations = await res.json();
             
-            if (error) {
-                console.error("Supabase Error:", error);
-                return;
-            }
-
             if (locations) {
                 console.log(`Tactical Link established: ${locations.length} sectors detected.`);
                 
@@ -797,27 +777,9 @@ export class MapController {
         this.intelStories.innerHTML = '<div class="text-xs opacity-50">Loading Lore...</div>';
         this.intelReviews.innerHTML = '<div class="text-xs opacity-50">Scanning SITREPs...</div>';
         this.intelReports.innerHTML = '<div class="text-xs opacity-50">Checking Logistics...</div>';
-
-        // 1. Stories
-        this.supabase.from('stories').select('*').eq('loc_id', locId).then(({ data }) => {
-            this.intelStories.innerHTML = data && data.length > 0 
-                ? data.map(s => `<div class="bg-white/5 p-3 rounded-2xl border border-white/5"><div class="font-bold text-xs mb-1">${s.title}</div><div class="text-[10px] opacity-70">${s.content}</div></div>`).join('')
-                : '<div class="text-xs opacity-30 italic">No lore archived for this sector.</div>';
-        });
-
-        // 2. Reviews (SITREPs)
-        this.supabase.from('reviews').select('*').eq('location_id', locId).then(({ data }) => {
-            this.intelReviews.innerHTML = data && data.length > 0 
-                ? data.map(r => `<div class="bg-white/5 p-3 rounded-2xl border border-white/5"><div class="flex justify-between font-bold text-[10px] mb-1"><span>${r.user_id}</span><span>${'★'.repeat(r.rating)}</span></div><div class="text-[10px] opacity-70">${r.content}</div></div>`).join('')
-                : '<div class="text-xs opacity-30 italic">No field reports available.</div>';
-        });
-
-        // 3. Travel Reports (Logistics)
-        this.supabase.from('travel_reports').select('*').eq('loc_id', locId).then(({ data }) => {
-            this.intelReports.innerHTML = data && data.length > 0 
-                ? data.map(tr => `<div class="bg-white/5 p-3 rounded-2xl border border-white/5"><div class="flex justify-between text-[10px] font-bold"><span>${tr.vehicle || 'Transport'}</span><span>${tr.fare} ${tr.currency}</span></div><div class="text-[10px] opacity-70">${tr.origin_name} ➔ ${tr.dest_name}</div></div>`).join('')
-                : '<div class="text-xs opacity-30 italic">No transport data found.</div>';
-        });
+        this.intelStories.innerHTML = '<div class="text-xs opacity-30 italic">No lore archived for this sector.</div>';
+        this.intelReviews.innerHTML = '<div class="text-xs opacity-30 italic">No field reports available.</div>';
+        this.intelReports.innerHTML = '<div class="text-xs opacity-30 italic">No transport data found.</div>';
     }
 
     async generatePaths(lat, lng) {
@@ -915,14 +877,7 @@ export class MapController {
     }
 
     async syncWithSupabase() {
-        // This is now legacy/automatic but kept for reference if needed
-        if (!this.selectedDestination) return;
-        try {
-            await this.supabase.from('missions').upsert({
-                id: 1, target_lat: this.selectedDestination.lat, target_lng: this.selectedDestination.lng,
-                target_name: this.selectedDestination.name, updated_at: new Date()
-            });
-        } catch (e) { console.error("Sync Failed:", e); }
+        // Obsolete
     }
 
     async searchMultipleLocations(query) {
@@ -931,35 +886,23 @@ export class MapController {
 
     async searchIntel(query) {
         if (!query || query.length < 1) return [];
-
         try {
-            // 1. High-Performance Substring Fetch
-            const { data: candidates, error } = await this.supabase
-                .from('locations')
-                .select('*')
-                .ilike('name', `%${query}%`)
-                .limit(20);
-
-            if (error) throw error;
+            const res = await fetch('/api/locations');
+            const all = await res.json();
+            const candidates = all.filter(l => l.name.toLowerCase().includes(query.toLowerCase())).slice(0, 20);
+            
             if (!candidates) return [];
 
-            // 2. Tactical Similarity Analysis (90% high-fidelity focus)
             const scoredMatches = candidates.map(loc => {
                 const name = (loc.name || "").toLowerCase();
                 const q = query.toLowerCase();
-                
-                // Calculate Similarity Score
                 let matches = 0;
-                const qChars = q.split('');
-                qChars.forEach(char => {
+                q.split('').forEach(char => {
                     if (name.includes(char)) matches++;
                 });
-                
-                const score = matches / q.length;
-                return { ...loc, similarity: score };
+                return { ...loc, similarity: matches / q.length };
             });
 
-            // 3. Filter and Sort: Show all if > 30%, but prioritize > 90%
             return scoredMatches
                 .filter(m => m.similarity >= 0.3)
                 .sort((a, b) => b.similarity - a.similarity)
@@ -967,9 +910,7 @@ export class MapController {
 
         } catch (e) {
             console.error("Search Engine failure:", e);
-            // Emergency Fallback
-            const { data } = await this.supabase.from('locations').select('*').limit(5).ilike('name', `%${query}%`);
-            return data || [];
+            return [];
         }
     }
 
