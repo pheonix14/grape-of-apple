@@ -10,7 +10,7 @@ def get_free_port(port=8000):
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                s.bind((""0.0.0.0"", port))
+                s.bind(("0.0.0.0", port))
                 return port
             except OSError:
                 port += 1
@@ -27,7 +27,7 @@ class RestartHandler(FileSystemEventHandler):
             self.process.terminate()
             self.process.wait()
         print(f"Starting FastAPI server on port {PORT}...")
-        self.process = subprocess.Popen([sys.executable, "-m", "uvicorn", "main:app", "--host", ""0.0.0.0"", "--port", str(PORT)])
+        self.process = subprocess.Popen([sys.executable, "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", str(PORT)])
 
     def on_any_event(self, event):
         if event.is_directory:
