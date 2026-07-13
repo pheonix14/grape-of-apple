@@ -64,8 +64,8 @@ export class SettingsController {
         if (data.bgImage !== undefined) this.bgImage = data.bgImage;
         if (data.isPrivacyMode !== undefined) this.isPrivacyMode = data.isPrivacyMode;
         
-        if (data.activeTheme) this.applyTheme(data.activeTheme);
-        if (data.activeSkin) this.applySkin(data.activeSkin);
+        this.applyTheme(data.activeTheme !== undefined ? data.activeTheme : null);
+        this.applySkin(data.activeSkin !== undefined ? data.activeSkin : null);
         
         if (this.gridFilter) document.body.classList.add('tron-legacy-grid');
         if (this.cockpitMode) document.body.classList.add('cockpit-mode');
@@ -256,7 +256,7 @@ export class SettingsController {
         document.body.classList.remove(...allThemes);
         this.activeTheme = theme;
         if (theme) {
-            const themeClass = theme === 'legacy' ? 'tron-legacy' : `tron-ares-${theme}`;
+            const themeClass = theme === 'legacy' ? 'tron-legacy' : `tron-${theme}`;
             document.body.classList.add(themeClass);
         }
         // Update UI
