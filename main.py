@@ -19,7 +19,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 async def read_index():
-    return FileResponse("static/grape_v1.1.html")
+    return FileResponse("static/grape_v1.2.html")
 
 @app.get("/api/media")
 async def list_media():
