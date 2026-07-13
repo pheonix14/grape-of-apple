@@ -208,15 +208,15 @@ body.tron-ares-rb { background-color: #0a0000; --text-primary: #ff003c; --panel-
 body.tron-ares-rb #input_video, body.tron-ares-rb #input_video_right { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(320deg) saturate(3); }
 body.tron-ares-rb .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3), inset 0 0 10px rgba(255, 0, 60, 0.1) !important; color: var(--text-primary) !important; }
 
-body.tron-ares-rw { background-color: #fdfdfd; --text-primary: #ff003c; --panel-bg: rgba(255, 255, 255, 0.35); }
+body.tron-ares-rw { background-color: #fdfdfd; --text-primary: #991b1b; --panel-bg: rgba(255, 255, 255, 0.35); }
 body.tron-ares-rw #input_video, body.tron-ares-rw #input_video_right { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(330deg); }
-body.tron-ares-rw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.4) !important; color: var(--text-primary) !important; }
-body.tron-ares-rw .text-white, body.tron-ares-rw span, body.tron-ares-rw h2, body.tron-ares-rw h3 { color: #ff003c !important; }
+body.tron-ares-rw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #991b1b !important; box-shadow: 0 0 20px rgba(153, 27, 27, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.4) !important; color: var(--text-primary) !important; }
+body.tron-ares-rw .text-white, body.tron-ares-rw span, body.tron-ares-rw h2, body.tron-ares-rw h3 { color: #991b1b !important; }
 
-body.tron-ares-bw { background-color: #f8fafc; --text-primary: #0284c7; --panel-bg: rgba(255, 255, 255, 0.35); }
+body.tron-ares-bw { background-color: #f8fafc; --text-primary: #1e3a8a; --panel-bg: rgba(255, 255, 255, 0.35); }
 body.tron-ares-bw #input_video, body.tron-ares-bw #input_video_right { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(200deg); }
-body.tron-ares-bw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #0284c7 !important; box-shadow: 0 0 20px rgba(2, 132, 199, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.4) !important; color: var(--text-primary) !important; }
-body.tron-ares-bw .text-white, body.tron-ares-bw span, body.tron-ares-bw h2, body.tron-ares-bw h3 { color: #0284c7 !important; }
+body.tron-ares-bw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #1e3a8a !important; box-shadow: 0 0 20px rgba(30, 58, 138, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.4) !important; color: var(--text-primary) !important; }
+body.tron-ares-bw .text-white, body.tron-ares-bw span, body.tron-ares-bw h2, body.tron-ares-bw h3 { color: #1e3a8a !important; }
 
 .glass-panel { color: inherit; }
 .interactable button, .interactable { color: inherit; }

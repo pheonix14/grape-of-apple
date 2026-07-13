@@ -33,7 +33,7 @@
     <style type="text/tailwindcss">
         @layer utilities {
             .glass-panel {
-                @apply bg-white/5 backdrop-blur-[50px] border border-white/10 shadow-2xl;
+                @apply bg-slate-950/45 backdrop-blur-[16px] border border-white/15 shadow-2xl;
             }
             .interactable {
                 @apply transition-all duration-300 ease-out cursor-pointer;
@@ -117,20 +117,6 @@
             }
         }
     </style>
-    <!-- Security Core -->
-    <script>
-        // Disable right-click context menu
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'F12' ||
-                (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'i' || event.key === 'J' || event.key === 'j')) ||
-                (event.ctrlKey && (event.key === 'U' || event.key === 'u'))) {
-                event.preventDefault();
-            }
-        });
-    </script>
 </head>
 
 <body
@@ -322,13 +308,13 @@
             <div class="flex flex-col gap-6">
                 <div class="flex flex-col px-1">
                     <h2 class="text-xl sm:text-2xl font-black tracking-tight text-white uppercase">Control Center</h2>
-                    <p class="text-[10px] sm:text-xs font-bold text-blue-400/60 uppercase tracking-[0.3em]">System Environment Config</p>
+                    <p class="text-xs sm:text-sm font-bold text-blue-400/80 uppercase tracking-[0.25em]">System Environment Config</p>
                 </div>
 
                 <!-- Main Utility Bar -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
-                    <div class="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-white/10">
-                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white/40">Scale</span>
+                    <div class="flex flex-col gap-2.5 p-4 bg-white/5 rounded-2xl border border-white/10">
+                        <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/60">Scale</span>
                         <div class="flex gap-1.5">
                             <button id="btn-size-down"
                                 class="interactable flex-1 h-11 bg-white/10 hover:bg-white/20 rounded-xl text-xl font-bold flex items-center justify-center">-</button>
@@ -336,8 +322,8 @@
                                 class="interactable flex-1 h-11 bg-white/10 hover:bg-white/20 rounded-xl text-xl font-bold flex items-center justify-center">+</button>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-white/10">
-                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white/40">Text</span>
+                    <div class="flex flex-col gap-2.5 p-4 bg-white/5 rounded-2xl border border-white/10">
+                        <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/60">Text</span>
                         <div class="flex gap-1.5">
                             <button id="btn-text-down"
                                 class="interactable flex-1 h-11 bg-white/10 hover:bg-white/20 rounded-xl text-xl font-bold flex items-center justify-center">-</button>
@@ -345,29 +331,29 @@
                                 class="interactable flex-1 h-11 bg-white/10 hover:bg-white/20 rounded-xl text-xl font-bold flex items-center justify-center">+</button>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-white/10 justify-between">
-                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white/40">Mirror</span>
+                    <div class="flex flex-col gap-2.5 p-4 bg-white/5 rounded-2xl border border-white/10 justify-between">
+                        <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/60">Mirror</span>
                         <button id="btn-mirror-toggle"
-                            class="interactable w-full h-11 bg-white/10 hover:bg-white/20 rounded-xl font-black uppercase text-xs tracking-widest">Flip</button>
+                            class="interactable w-full h-11 bg-white/10 hover:bg-white/20 rounded-xl font-black uppercase text-sm tracking-wider">Flip</button>
                     </div>
-                    <div class="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-white/10 justify-between">
-                        <span class="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white/40">Stereo</span>
+                    <div class="flex flex-col gap-2.5 p-4 bg-white/5 rounded-2xl border border-white/10 justify-between">
+                        <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/60">Stereo</span>
                         <button id="btn-cardboard-toggle"
-                            class="interactable w-full h-11 bg-white/10 hover:bg-white/20 rounded-xl font-black uppercase text-xs tracking-widest">Toggle</button>
+                            class="interactable w-full h-11 bg-white/10 hover:bg-white/20 rounded-xl font-black uppercase text-sm tracking-wider">Toggle</button>
                     </div>
                 </div>
 
                 <!-- Themes & Skins (Horizontal Split) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="flex flex-col gap-4 p-5 bg-white/5 rounded-3xl border border-white/10">
-                        <div class="flex flex-col gap-2.5">
+                        <div class="flex flex-col gap-3">
                             <div class="flex justify-between items-center px-1">
-                                <span class="text-xs font-black uppercase tracking-widest text-white/50">Border Tone</span>
+                                <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/70">Border Tone</span>
                                 <input type="color" id="border-color-picker"
                                     class="interactable w-7 h-7 bg-transparent cursor-pointer rounded-lg overflow-hidden border-none">
                             </div>
                             <div class="flex justify-between items-center px-1">
-                                <span class="text-xs font-black uppercase tracking-widest text-white/50">Background</span>
+                                <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/70">Background</span>
                                 <div class="flex items-center gap-3">
                                     <label title="Upload Background Image"
                                         class="interactable cursor-pointer w-7 h-7 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center border border-white/20 transition-all">
@@ -384,7 +370,7 @@
                                 </div>
                             </div>
                             <div class="flex justify-between items-center px-1 mt-1.5 pt-2 border-t border-white/5">
-                                <span class="text-xs font-black uppercase tracking-widest text-white/50">Hide Camera</span>
+                                <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/70">Hide Camera</span>
                                 <button id="btn-privacy-toggle"
                                     class="interactable w-11 h-6 bg-white/10 rounded-full relative transition-all">
                                     <div id="privacy-dot"
@@ -407,16 +393,16 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-4 p-5 bg-white/5 rounded-3xl border border-white/10 justify-between">
-                        <span class="text-xs font-black uppercase tracking-widest text-white/50 px-1">Button Skins</span>
+                        <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-white/70 px-1">Button Skins</span>
                         <div class="grid grid-cols-2 gap-2 mt-1">
                             <button id="btn-skin-rb"
-                                class="interactable h-14 bg-red-600/10 hover:bg-red-600/20 rounded-2xl border border-red-600/30 text-[10px] font-black uppercase text-red-500 tracking-wider">Ares RB</button>
+                                class="interactable h-14 bg-red-600/10 hover:bg-red-600/20 rounded-2xl border border-red-600/30 text-xs font-bold uppercase text-red-500 tracking-wider">Ares RB</button>
                             <button id="btn-skin-blue"
-                                class="interactable h-14 bg-blue-600/10 hover:bg-blue-600/20 rounded-2xl border border-blue-600/30 text-[10px] font-black uppercase text-blue-500 tracking-wider">Ares Blue</button>
+                                class="interactable h-14 bg-blue-600/10 hover:bg-blue-600/20 rounded-2xl border border-blue-600/30 text-xs font-bold uppercase text-blue-500 tracking-wider">Ares Blue</button>
                             <button id="btn-skin-rw"
-                                class="interactable h-14 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/20 text-[10px] font-black uppercase text-red-500 tracking-wider">Ares RW</button>
+                                class="interactable h-14 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/20 text-xs font-bold uppercase text-red-500 tracking-wider">Ares RW</button>
                             <button id="btn-skin-legacy"
-                                class="interactable h-14 bg-cyan-600/10 hover:bg-cyan-600/20 rounded-2xl border border-cyan-600/30 text-[10px] font-black uppercase text-cyan-500 tracking-wider">Legacy</button>
+                                class="interactable h-14 bg-cyan-600/10 hover:bg-cyan-600/20 rounded-2xl border border-cyan-600/30 text-xs font-bold uppercase text-cyan-500 tracking-wider">Legacy</button>
                         </div>
                     </div>
                 </div>
@@ -424,11 +410,11 @@
                 <!-- Global Filters -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button id="btn-filter-grid"
-                        class="interactable h-14 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-2xl border border-cyan-500/30 text-xs font-black uppercase tracking-[0.25em] text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                        class="interactable h-14 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-2xl border border-cyan-500/30 text-sm font-bold uppercase tracking-[0.25em] text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
                         Engage Grid Vibe
                     </button>
                     <button id="btn-cockpit-toggle"
-                        class="interactable h-14 bg-blue-500/10 hover:bg-blue-500/20 rounded-2xl border border-blue-500/30 text-xs font-black uppercase tracking-[0.25em] text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                        class="interactable h-14 bg-blue-500/10 hover:bg-blue-500/20 rounded-2xl border border-blue-500/30 text-sm font-bold uppercase tracking-[0.25em] text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
                         Engage Cockpit
                     </button>
                 </div>
