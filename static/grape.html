@@ -33,7 +33,7 @@
     <style type="text/tailwindcss">
         @layer utilities {
             .glass-panel {
-                @apply bg-slate-950/90 backdrop-blur-[4px] border border-white/10 shadow-2xl;
+                @apply bg-slate-950/50 backdrop-blur-[8px] border border-white/15 shadow-2xl;
             }
             .interactable {
                 @apply transition-all duration-300 ease-out cursor-pointer;
@@ -295,107 +295,129 @@
                 class="text-[10px] font-black text-white font-['Syncopate'] drop-shadow-[0_0_5px_#000]">0°</div>
         </div>
 
-        <!-- Settings Panel - Mobile Bottom Sheet -->
+        <!-- Settings Panel -->
         <div id="settings-panel"
-            class="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[85vh] overflow-y-auto opacity-0 pointer-events-none transition-all duration-400"
-            style="background:rgba(5,7,15,0.95);border-top:1px solid rgba(255,255,255,0.12);border-radius:24px 24px 0 0;">
-
-            <!-- Drag handle -->
-            <div style="display:flex;justify-content:center;padding-top:12px;padding-bottom:4px;">
-                <div style="width:40px;height:5px;background:rgba(255,255,255,0.25);border-radius:99px;"></div>
-            </div>
-
-            <!-- Header row -->
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                <div>
-                    <h2 style="font-size:1.25rem;font-weight:900;color:#fff;letter-spacing:0.05em;text-transform:uppercase;margin:0;">Control Center</h2>
-                    <p style="font-size:0.7rem;font-weight:700;color:rgba(96,165,250,0.9);letter-spacing:0.2em;text-transform:uppercase;margin:0;">System Config</p>
+            class="absolute top-1/2 left-1/2 z-50 w-[88vw] sm:w-[480px] md:w-[560px] max-w-full glass-panel p-4 rounded-[24px] opacity-0 pointer-events-none transition-all duration-500 shadow-2xl">
+            <button id="btn-settings-close"
+                class="interactable absolute top-4 right-4 w-11 h-11 rounded-full bg-red-500/20 hover:bg-red-500/40 border border-red-500/40 flex items-center justify-center text-red-400 transition-all z-10">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+            <div class="flex flex-col gap-3">
+                <div class="flex flex-col px-0.5">
+                    <h2 class="text-base font-black tracking-tight text-white uppercase">Control Center</h2>
+                    <p class="text-[10px] font-bold text-blue-400/80 uppercase tracking-[0.2em]">System Environment Config</p>
                 </div>
-                <button id="btn-settings-close" class="interactable"
-                    style="width:44px;height:44px;border-radius:50%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);display:flex;align-items:center;justify-content:center;color:#f87171;flex-shrink:0;">
-                    <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
 
-            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
-
-                <!-- Scale / Text / Mirror / Stereo -->
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:12px;">
-                        <span style="font-size:0.75rem;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,0.55);display:block;margin-bottom:8px;">Scale</span>
-                        <div style="display:flex;gap:8px;">
-                            <button id="btn-size-down" class="interactable" style="flex:1;height:52px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;font-size:1.5rem;font-weight:700;color:#fff;">&#8722;</button>
-                            <button id="btn-size-up" class="interactable" style="flex:1;height:52px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;font-size:1.5rem;font-weight:700;color:#fff;">+</button>
+                <!-- Main Utility Bar -->
+                <div class="grid grid-cols-4 gap-2">
+                    <div class="flex flex-col gap-1.5 p-2.5 bg-white/5 rounded-xl border border-white/10">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Scale</span>
+                        <div class="flex gap-1">
+                            <button id="btn-size-down"
+                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold flex items-center justify-center">-</button>
+                            <button id="btn-size-up"
+                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold flex items-center justify-center">+</button>
                         </div>
                     </div>
-                    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:12px;">
-                        <span style="font-size:0.75rem;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,0.55);display:block;margin-bottom:8px;">Text</span>
-                        <div style="display:flex;gap:8px;">
-                            <button id="btn-text-down" class="interactable" style="flex:1;height:52px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;font-size:1.5rem;font-weight:700;color:#fff;">&#8722;</button>
-                            <button id="btn-text-up" class="interactable" style="flex:1;height:52px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;font-size:1.5rem;font-weight:700;color:#fff;">+</button>
+                    <div class="flex flex-col gap-1.5 p-2.5 bg-white/5 rounded-xl border border-white/10">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Text</span>
+                        <div class="flex gap-1">
+                            <button id="btn-text-down"
+                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold flex items-center justify-center">-</button>
+                            <button id="btn-text-up"
+                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold flex items-center justify-center">+</button>
                         </div>
                     </div>
-                    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:8px;">
-                        <span style="font-size:0.75rem;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,0.55);">Mirror</span>
-                        <button id="btn-mirror-toggle" class="interactable" style="width:100%;height:52px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;font-size:0.95rem;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:#fff;">Flip</button>
+                    <div class="flex flex-col gap-1.5 p-2.5 bg-white/5 rounded-xl border border-white/10 justify-between">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Mirror</span>
+                        <button id="btn-mirror-toggle"
+                            class="interactable w-full h-9 bg-white/10 hover:bg-white/20 rounded-lg font-black uppercase text-[10px] tracking-wider">Flip</button>
                     </div>
-                    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:8px;">
-                        <span style="font-size:0.75rem;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,0.55);">Stereo</span>
-                        <button id="btn-cardboard-toggle" class="interactable" style="width:100%;height:52px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;font-size:0.95rem;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:#fff;">Toggle</button>
+                    <div class="flex flex-col gap-1.5 p-2.5 bg-white/5 rounded-xl border border-white/10 justify-between">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Stereo</span>
+                        <button id="btn-cardboard-toggle"
+                            class="interactable w-full h-9 bg-white/10 hover:bg-white/20 rounded-lg font-black uppercase text-[10px] tracking-wider">Toggle</button>
                     </div>
                 </div>
 
-                <!-- Settings block: Border / BG / Camera + Theme swatches -->
-                <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-size:0.8rem;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.8);">Border Tone</span>
-                        <input type="color" id="border-color-picker" class="interactable" style="width:38px;height:38px;border-radius:10px;border:none;cursor:pointer;background:transparent;">
-                    </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-size:0.8rem;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.8);">Background</span>
-                        <div style="display:flex;gap:10px;align-items:center;">
-                            <label title="Upload Image" class="interactable" style="width:38px;height:38px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                                <svg style="width:18px;height:18px;" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                <input type="file" id="bg-image-upload" accept="image/*" class="hidden">
-                            </label>
-                            <input type="color" id="bg-color-picker" class="interactable" style="width:38px;height:38px;border-radius:10px;border:none;cursor:pointer;background:transparent;">
+                <!-- Themes & Skins (Horizontal Split) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-3 p-3 bg-white/5 rounded-2xl border border-white/10">
+                        <div class="flex flex-col gap-2">
+                            <div class="flex justify-between items-center px-0.5">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-white/70">Border Tone</span>
+                                <input type="color" id="border-color-picker"
+                                    class="interactable w-6 h-6 bg-transparent cursor-pointer rounded-md overflow-hidden border-none">
+                            </div>
+                            <div class="flex justify-between items-center px-0.5">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-white/70">Background</span>
+                                <div class="flex items-center gap-2">
+                                    <label title="Upload Background Image"
+                                        class="interactable cursor-pointer w-6 h-6 bg-white/10 hover:bg-white/20 rounded-md flex items-center justify-center border border-white/20 transition-all">
+                                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                        <input type="file" id="bg-image-upload" accept="image/*" class="hidden">
+                                    </label>
+                                    <input type="color" id="bg-color-picker"
+                                        class="interactable w-6 h-6 bg-transparent cursor-pointer rounded-md overflow-hidden border-none">
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center px-0.5 pt-1.5 border-t border-white/5">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-white/70">Hide Camera</span>
+                                <button id="btn-privacy-toggle"
+                                    class="interactable w-9 h-5 bg-white/10 rounded-full relative transition-all">
+                                    <div id="privacy-dot"
+                                        class="absolute left-0.5 top-0.5 w-4 h-4 bg-white/40 rounded-full transition-all">
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <button id="btn-theme-normal"
+                                class="theme-btn interactable h-9 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10"></button>
+                            <button id="btn-theme-legacy"
+                                class="theme-btn interactable h-9 bg-cyan-500/20 hover:bg-cyan-500/30 rounded-xl border border-cyan-500/40"></button>
+                            <button id="btn-theme-ares-rb"
+                                class="theme-btn interactable h-9 bg-red-600/20 hover:bg-red-600/30 rounded-xl border border-red-600/40"></button>
+                            <button id="btn-theme-ares-rw"
+                                class="theme-btn interactable h-9 bg-white/20 hover:bg-white/30 rounded-xl border border-red-400/40"></button>
+                            <button id="btn-theme-ares-bw"
+                                class="theme-btn interactable h-9 bg-blue-100/20 hover:bg-blue-100/30 rounded-xl border border-blue-400/40"></button>
                         </div>
                     </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;">
-                        <span style="font-size:0.8rem;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.8);">Hide Camera</span>
-                        <button id="btn-privacy-toggle" class="interactable" style="width:54px;height:30px;background:rgba(255,255,255,0.1);border-radius:99px;position:relative;border:none;cursor:pointer;">
-                            <div id="privacy-dot" style="position:absolute;left:4px;top:5px;width:20px;height:20px;background:rgba(255,255,255,0.5);border-radius:50%;transition:left 0.2s;"></div>
-                        </button>
-                    </div>
-                    <!-- Theme swatches -->
-                    <div style="display:flex;gap:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);">
-                        <button id="btn-theme-normal" class="theme-btn interactable" style="flex:1;height:44px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.15);border-radius:14px;"></button>
-                        <button id="btn-theme-legacy" class="theme-btn interactable" style="flex:1;height:44px;background:rgba(6,182,212,0.15);border:2px solid rgba(6,182,212,0.4);border-radius:14px;"></button>
-                        <button id="btn-theme-ares-rb" class="theme-btn interactable" style="flex:1;height:44px;background:rgba(220,38,38,0.15);border:2px solid rgba(220,38,38,0.4);border-radius:14px;"></button>
-                        <button id="btn-theme-ares-rw" class="theme-btn interactable" style="flex:1;height:44px;background:rgba(255,255,255,0.15);border:2px solid rgba(248,113,113,0.4);border-radius:14px;"></button>
-                        <button id="btn-theme-ares-bw" class="theme-btn interactable" style="flex:1;height:44px;background:rgba(147,197,253,0.1);border:2px solid rgba(96,165,250,0.4);border-radius:14px;"></button>
-                    </div>
-                </div>
-
-                <!-- Button Skins -->
-                <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:14px;">
-                    <span style="font-size:0.75rem;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:rgba(255,255,255,0.55);display:block;margin-bottom:10px;">Button Skins</span>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                        <button id="btn-skin-rb" class="interactable" style="height:52px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:14px;font-size:0.85rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#f87171;">Ares RB</button>
-                        <button id="btn-skin-blue" class="interactable" style="height:52px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:14px;font-size:0.85rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#60a5fa;">Ares Blue</button>
-                        <button id="btn-skin-rw" class="interactable" style="height:52px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);border-radius:14px;font-size:0.85rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#fca5a5;">Ares RW</button>
-                        <button id="btn-skin-legacy" class="interactable" style="height:52px;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:14px;font-size:0.85rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#22d3ee;">Legacy</button>
+                    <div class="flex flex-col gap-2.5 p-3 bg-white/5 rounded-2xl border border-white/10">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-white/70 px-0.5">Button Skins</span>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <button id="btn-skin-rb"
+                                class="interactable h-9 bg-red-600/10 hover:bg-red-600/20 rounded-xl border border-red-600/30 text-[10px] font-bold uppercase text-red-500">Ares RB</button>
+                            <button id="btn-skin-blue"
+                                class="interactable h-9 bg-blue-600/10 hover:bg-blue-600/20 rounded-xl border border-blue-600/30 text-[10px] font-bold uppercase text-blue-500">Ares Blue</button>
+                            <button id="btn-skin-rw"
+                                class="interactable h-9 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-[10px] font-bold uppercase text-red-500">Ares RW</button>
+                            <button id="btn-skin-legacy"
+                                class="interactable h-9 bg-cyan-600/10 hover:bg-cyan-600/20 rounded-xl border border-cyan-600/30 text-[10px] font-bold uppercase text-cyan-500">Legacy</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Action buttons -->
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-bottom:12px;">
-                    <button id="btn-filter-grid" class="interactable" style="height:56px;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:16px;font-size:0.8rem;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:#22d3ee;">Grid Vibe</button>
-                    <button id="btn-cockpit-toggle" class="interactable" style="height:56px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:16px;font-size:0.8rem;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:#60a5fa;">Cockpit</button>
+                <!-- Global Filters -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btn-filter-grid"
+                        class="interactable h-9 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-xl border border-cyan-500/30 text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+                        Grid Vibe
+                    </button>
+                    <button id="btn-cockpit-toggle"
+                        class="interactable h-9 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl border border-blue-500/30 text-[10px] font-bold uppercase tracking-wider text-blue-400">
+                        Cockpit
+                    </button>
                 </div>
-
             </div>
         </div>
 
