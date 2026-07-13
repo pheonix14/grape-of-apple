@@ -4,3 +4,5 @@ gunicorn
 watchdog
 python-dotenv
 python-multipart
+supabase
+httpx
