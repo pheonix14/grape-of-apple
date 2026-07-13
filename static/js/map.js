@@ -20,6 +20,11 @@ export class MapController {
         this.routeList = document.getElementById('route-list');
         this.searchResultsPanel = document.getElementById('map-search-results');
         
+        // Neural Slider Logic
+        this.scrollHandle = document.getElementById('search-scroll-handle');
+        this.scrollTrack = document.getElementById('search-scroll-track');
+        this.isDraggingScroll = false;
+        
         // Intel Panel
         this.intelPanel = document.getElementById('tactical-intel');
         this.intelName = document.getElementById('intel-name');
@@ -29,6 +34,13 @@ export class MapController {
         this.intelReports = document.getElementById('intel-reports');
         this.btnIntelClose = document.getElementById('btn-intel-close');
         this.btnIntelDest = document.getElementById('btn-intel-destination');
+        this.btnIntelToggle = document.getElementById('btn-intel-toggle');
+        this.intelTabs = document.querySelectorAll('.intel-tab-btn');
+        this.intelSections = document.querySelectorAll('.intel-section');
+        this.intelContentScroll = document.getElementById('intel-content-scroll');
+        this.intelScrollHandle = document.getElementById('intel-scroll-handle');
+        this.intelScrollTrack = document.getElementById('intel-scroll-track');
+        this.isDraggingIntelScroll = false;
 
         this.map = null;
         this.activePolylines = [];
@@ -49,11 +61,62 @@ export class MapController {
         this.isMinimized = false;
         this.isNavigating = false;
         this.lastPinchPos = null;
+        this.lastPinchTime = 0;
         this.hoverTimer = null;
         this.hoverTargetId = null;
-        this.currentIntelLoc = null; // Store for 'Set Destination' button
+        this.currentIntelLoc = null; 
+        this.hasIntelOpenedOnce = false;
 
         this.bindEvents();
+    }
+
+    setDestination(lat, lng, name, id, category, triggerSource = 'manual') {
+        this.selectedDestination = { lat, lng, name };
+        
+        if (this.destinationMarker) this.map.removeLayer(this.destinationMarker);
+        
+        this.destinationMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+                className: 'tactical-marker-dest',
+                html: '<div class="w-8 h-8 bg-blue-600 rounded-full border-4 border-white shadow-2xl animate-pulse"></div>',
+                iconSize: [32, 32]
+            })
+        }).addTo(this.map).bindPopup(`<b>${name}</b><br>${category || 'Sector'}`).openPopup();
+        
+        this.map.setView([lat, lng], 14);
+        this.generatePaths(lat, lng);
+        this.syncMission();
+        
+        // 1.4 SECOND TACTICAL DELAY before Minimap & Intel Deployment
+        setTimeout(() => {
+            // Show Intel Button
+            if (this.btnIntelToggle) this.btnIntelToggle.classList.remove('hidden');
+            
+            // Automatically switch to Minimap if not already minimized
+            if (!this.isMinimized) {
+                this.toggleMinimize();
+            }
+
+            if (id) {
+                this.loadTacticalIntel(id, name, category, lat, lng);
+                
+                // SPECIAL RULE: In minimap mode, only auto-open if user used voice
+                if (this.isMinimized) {
+                    if (triggerSource === 'mic') {
+                        this.intelPanel.classList.remove('hidden');
+                    }
+                } else {
+                    // Full Cockpit: Auto-open only for the very first mission of the session
+                    if (!this.hasIntelOpenedOnce && this.intelPanel) {
+                        this.intelPanel.classList.remove('hidden');
+                        this.hasIntelOpenedOnce = true;
+                    }
+                }
+            }
+        }, 1400);
+
+        this.switchIntelTab('overview');
+        this.fetchIntel(id);
     }
 
     bindEvents() {
@@ -61,11 +124,9 @@ export class MapController {
             this.openMap();
         });
 
-        this.btnClose.addEventListener('click', () => {
-            this.window.classList.add('hidden');
-            this.isOpen = false;
-            if (this.settings) this.settings.setAppOpen(false);
-        });
+        if (this.btnClose) {
+            this.btnClose.addEventListener('click', () => this.closeMap());
+        }
 
         if (this.btnLocate) {
             this.btnLocate.addEventListener('click', () => {
@@ -122,15 +183,58 @@ export class MapController {
         }
 
         if (this.searchInput) {
+            const toggleBtn = document.getElementById('btn-search-toggle');
+            const clearBtn = document.getElementById('btn-search-clear');
+            const wrapper = document.getElementById('search-wrapper');
+            
+            if (toggleBtn && wrapper) {
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    wrapper.classList.toggle('expanded');
+                    // Focus removed to prevent auto-keyboard on first instance
+                });
+            }
+
+            if (clearBtn && wrapper) {
+                clearBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    wrapper.classList.remove('expanded');
+                    this.searchInput.value = "";
+                    this.showSearchResults([]);
+                });
+            }
+
             this.searchInput.addEventListener('input', async () => {
                 const q = this.searchInput.value.trim();
-                if (q.length > 1) {
+                if (q.length > 0) {
                     const matches = await this.searchMultipleLocations(q);
                     this.showSearchResults(matches);
                 } else {
-                    this.searchResultsPanel.classList.add('hidden');
+                    this.showSearchResults([]);
                 }
             });
+
+            this.searchInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    if (this.btnSearch) this.btnSearch.click();
+                }
+            });
+            
+            // Keyboard trigger: Manual click or focus to manifest input deck
+            const triggerKeyboard = () => {
+                if (window.virtualKeyboard) {
+                    window.virtualKeyboard.open(this.searchInput);
+                }
+            };
+            this.searchInput.addEventListener('click', triggerKeyboard);
+            this.searchInput.addEventListener('focus', triggerKeyboard);
+
+            // GO button now persists as requested - only retraction via Cross
+            if (this.btnSearch) {
+                this.btnSearch.addEventListener('click', () => {
+                    // Retraction removed per user request
+                });
+            }
         }
 
         if (this.btnIntelClose) {
@@ -155,6 +259,54 @@ export class MapController {
         if (this.btnMinimize) {
             this.btnMinimize.addEventListener('click', () => this.toggleMinimize());
         }
+
+        if (this.btnIntelToggle) {
+            this.btnIntelToggle.addEventListener('click', () => {
+                this.intelPanel.classList.toggle('hidden');
+            });
+        }
+
+        if (this.btnIntelClose) {
+            this.btnIntelClose.addEventListener('click', () => {
+                this.intelPanel.classList.add('hidden');
+            });
+        }
+
+        this.intelTabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.getAttribute('data-target');
+                this.switchIntelTab(target);
+            });
+        });
+    }
+
+    switchIntelTab(targetId) {
+        // Update Buttons
+        this.intelTabs.forEach(btn => {
+            if (btn.getAttribute('data-target') === targetId) {
+                btn.classList.add('bg-blue-600', 'text-white', 'border', 'border-blue-400');
+                btn.classList.remove('text-white/40', 'hover:text-white');
+            } else {
+                btn.classList.remove('bg-blue-600', 'text-white', 'border', 'border-blue-400');
+                btn.classList.add('text-white/40', 'hover:text-white');
+            }
+        });
+
+        // Update Sections
+        this.intelSections.forEach(section => {
+            if (section.id === `intel-${targetId}-section`) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        });
+    }
+
+    updateIntelScrollHandle() {
+        if (!this.intelScrollHandle || !this.intelScrollTrack || !this.intelContentScroll) return;
+        const scrollPct = this.intelContentScroll.scrollTop / (this.intelContentScroll.scrollHeight - this.intelContentScroll.clientHeight);
+        const trackHeight = this.intelScrollTrack.clientHeight - this.intelScrollHandle.clientHeight;
+        this.intelScrollHandle.style.top = `${Math.max(0, scrollPct * trackHeight)}px`;
     }
 
     zoomInBy(amount = 1) {
@@ -165,10 +317,18 @@ export class MapController {
         if (this.map) this.map.setZoom(this.map.getZoom() - amount);
     }
 
-    openMap() {
-        this.window.classList.remove('hidden');
+    openMap(startMinimized = false) {
+        if (this.isOpen) {
+            this.closeMap();
+            return;
+        }
         this.isOpen = true;
-        if (this.settings) this.settings.setAppOpen(true);
+        this.window.classList.remove('hidden');
+        this.window.classList.add('flex');
+        
+        if (startMinimized && !this.isMinimized) {
+            this.toggleMinimize();
+        }
         
         if (!this.map) {
             setTimeout(() => {
@@ -178,6 +338,15 @@ export class MapController {
         } else {
             setTimeout(() => this.map.invalidateSize(), 300);
         }
+        if (this.settings) this.settings.setAppOpen(true, 'map');
+    }
+
+    closeMap() {
+        this.isOpen = false;
+        this.window.classList.add('hidden');
+        this.window.classList.remove('flex');
+        if (this.intelPanel) this.intelPanel.classList.add('hidden');
+        if (this.settings) this.settings.setAppOpen(false);
     }
 
     initMap() {
@@ -228,9 +397,19 @@ export class MapController {
     }
 
     async syncGPS(lat, lng) {
+        let userId = 'tactical_unit_1';
+        const savedUser = localStorage.getItem('grape_os_user');
+        if (savedUser) {
+            try { userId = JSON.parse(savedUser).user_id; } catch(e) {}
+        }
+
+        if (window.rewardEngine) {
+            window.rewardEngine.checkProximity(lat, lng);
+        }
+
         try {
             const { error } = await this.supabase.from('user_tracking').upsert({
-                user_id: 'tactical_unit_1', // Default ID for tracking
+                user_id: userId,
                 latitude: lat,
                 longitude: lng,
                 last_updated: new Date().toISOString()
@@ -396,6 +575,12 @@ export class MapController {
 
         if (locId) {
             this.loadTacticalIntel(locId, name, category, lat, lng);
+            
+            // Auto-open only for the VERY first time a target is set
+            if (!this.hasIntelOpenedOnce && this.intelPanel) {
+                this.intelPanel.classList.remove('hidden');
+                this.hasIntelOpenedOnce = true;
+            }
         }
     }
 
@@ -413,8 +598,7 @@ export class MapController {
         
         // Reset UI
         if (this.btnStop) this.btnStop.classList.add('hidden');
-        if (this.btnClear) this.btnClear.classList.remove('hidden');
-        if (this.infoPanel) this.infoPanel.classList.add('hidden');
+        if (this.mapMinimizeBtn) this.mapMinimizeBtn.classList.remove('hidden');
         
         // Restore markers
         this.updateMarkers();
@@ -429,35 +613,53 @@ export class MapController {
 
         if (this.isMinimized) {
             this.window.style.transition = "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
-            this.window.style.width = "400px";
-            this.window.style.height = "300px";
-            this.window.style.top = "40px";
-            this.window.style.right = "40px";
+            this.window.style.width = "240px";
+            this.window.style.height = "180px";
+            this.window.style.top = "20px";
+            this.window.style.right = "20px";
             this.window.style.left = "auto";
             this.window.style.bottom = "auto";
-            this.window.style.padding = "10px";
-            this.window.classList.add('shadow-2xl', 'border-blue-500/50');
+            this.window.style.padding = "0"; // No padding in nano mode
+            this.window.style.backgroundColor = "transparent";
+            this.window.style.backdropFilter = "none";
+            this.window.style.border = "none";
+            this.window.classList.add('shadow-2xl');
             
-            // 1. Hide Minimize/Restore Button (Rely on Double-Pinch)
+            if (this.map) {
+                const mapContainer = document.getElementById('map-container');
+                if (mapContainer) {
+                    mapContainer.style.background = "transparent";
+                    mapContainer.style.borderRadius = "16px";
+                }
+            }
+            
+            // 1. Hide Close and Minimize Buttons for Scout Mode
+            if (this.btnClose) this.btnClose.style.display = "none";
             this.btnMinimize.style.display = "none";
             
-            // 2. Wide Utility Row (Zoom + Locate)
+            // 2. Hide Tactical Overlay Controls
+            if (this.btnIntelToggle) this.btnIntelToggle.classList.add('hidden');
+            if (this.btnMarker) this.btnMarker.classList.add('hidden');
+            
+            // 3. Nano Utility Row
+            const zoomContainer = this.btnZoomIn.parentElement;
             zoomContainer.style.flexDirection = "row";
             zoomContainer.style.position = "absolute";
-            zoomContainer.style.top = "310px";
+            zoomContainer.style.top = "210px";
             zoomContainer.style.right = "0";
-            zoomContainer.style.width = "400px";
-            zoomContainer.style.height = "50px";
+            zoomContainer.style.width = "240px";
+            zoomContainer.style.height = "32px";
             zoomContainer.style.padding = "0";
-            zoomContainer.classList.add('gap-2');
+            zoomContainer.classList.add('gap-1');
             
-            // Style individual buttons for wide mode
+            // Scale individual buttons down for Nano mode
             [this.btnZoomIn, this.btnZoomOut, this.btnLocate].forEach(btn => {
                 if (btn) {
                     btn.style.flex = "1";
                     btn.style.width = "auto";
                     btn.style.height = "100%";
-                    btn.style.borderRadius = "12px";
+                    btn.style.borderRadius = "8px";
+                    btn.style.fontSize = "12px";
                 }
             });
 
@@ -465,18 +667,51 @@ export class MapController {
             if (this.searchInput) this.searchInput.parentElement.classList.add('hidden');
             if (this.btnClear) this.btnClear.classList.add('hidden');
             if (this.btnSearch) this.btnSearch.classList.add('hidden');
+
+            // 4. Reposition Intel Panel to Left Side (DO NOT FORCE OPEN)
+            if (this.intelPanel) {
+                this.intelPanel.style.right = "auto";
+                this.intelPanel.style.left = "1.5rem";
+                this.intelPanel.style.top = "1.5rem";
+                this.intelPanel.style.maxHeight = "calc(100vh - 150px)";
+            }
         } else {
+            // Restore to Full Cockpit State
             this.window.style.width = "100%";
             this.window.style.height = "100%";
             this.window.style.top = "0";
             this.window.style.left = "0";
-            this.window.style.padding = "6rem"; // p-24
-            this.window.classList.remove('shadow-2xl', 'border-blue-500/50');
+            this.window.style.right = "0";
+            this.window.style.bottom = "0";
+            this.window.style.transform = "none";
+            this.window.style.padding = "1.5rem"; 
+            this.window.style.backgroundColor = ""; // Restore to CSS default (glass-panel)
+            this.window.style.backdropFilter = "";
+            this.window.style.border = "";
+            this.window.classList.remove('shadow-2xl');
             
-            // Reset Utility Row (Restore to Top-Center Horizontal Bar)
+            const mapContainer = document.getElementById('map-container');
+            if (mapContainer) {
+                mapContainer.style.background = "";
+                mapContainer.style.borderRadius = "36px"; // Restore large rounding
+            }
+            
+            // 1. Restore Tactical Overlay Controls
+            if (this.btnIntelToggle) this.btnIntelToggle.classList.remove('hidden');
+            if (this.btnMarker) this.btnMarker.classList.remove('hidden');
+
+            // 3. Reset Intel Panel Position
+            if (this.intelPanel) {
+                this.intelPanel.style.left = "auto";
+                this.intelPanel.style.right = "1.5rem";
+                this.intelPanel.style.top = "3rem";
+                this.intelPanel.style.maxHeight = "85%";
+            }
+            
+            // 2. Reset Utility Row (Restore to Top-Center Horizontal Bar)
             zoomContainer.style.flexDirection = "row";
             zoomContainer.style.position = "absolute";
-            zoomContainer.style.top = "32px";
+            zoomContainer.style.top = "2rem"; // 32px
             zoomContainer.style.left = "50%";
             zoomContainer.style.transform = "translateX(-50%)";
             zoomContainer.style.right = "auto";
@@ -488,9 +723,9 @@ export class MapController {
             [this.btnZoomIn, this.btnZoomOut, this.btnLocate, this.btnClear, this.btnStop, this.btnMinimize].forEach(btn => {
                 if (btn) {
                     btn.style.flex = "none";
-                    btn.style.width = "5rem"; // w-20
-                    btn.style.height = "4rem"; // h-16
-                    btn.style.borderRadius = "1rem"; // rounded-2xl
+                    btn.style.width = "4rem"; // w-16
+                    btn.style.height = "3.5rem"; // h-14
+                    btn.style.borderRadius = "0.75rem"; // rounded-xl
                 }
             });
             
@@ -499,12 +734,14 @@ export class MapController {
             if (this.btnSearch) this.btnSearch.classList.remove('hidden');
             if (this.btnClear && !this.isNavigating) this.btnClear.classList.remove('hidden');
 
-            // Reset Minimize Button
+            // Reset Minimize and Close Buttons
             this.btnMinimize.style.display = "flex";
             this.btnMinimize.style.position = "relative";
             this.btnMinimize.style.top = "auto";
             this.btnMinimize.style.right = "auto";
             this.btnMinimize.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>';
+            
+            if (this.btnClose) this.btnClose.style.display = "flex";
         }
         setTimeout(() => this.map.invalidateSize(), 600);
     }
@@ -648,54 +885,89 @@ export class MapController {
     }
 
     async searchMultipleLocations(query) {
-        if (!query || query.length < 2) return [];
+        if (!query || query.length < 1) return [];
         try {
-            // Updated for User Schema: Removed 'description', added 'category'
-            const filter = `name.ilike.%${query}%,category.ilike.%${query}%`;
-            
-            const { data, error } = await this.supabase
+            // 1. High-Performance Substring Fetch
+            const { data: candidates, error } = await this.supabase
                 .from('locations')
                 .select('*')
-                .or(filter)
-                .limit(10);
+                .ilike('name', `%${query}%`)
+                .limit(20);
 
-            if (error) {
-                console.error("Supabase Search Error:", error.message, error.details);
-                // Fallback to name-only search
-                const { data: fallbackData } = await this.supabase
-                    .from('locations')
-                    .select('*')
-                    .ilike('name', `%${query}%`)
-                    .limit(10);
-                return fallbackData || [];
-            }
+            if (error) throw error;
+            if (!candidates) return [];
 
-            return data || [];
+            // 2. Neural Similarity Analysis (90% high-fidelity focus)
+            const scoredMatches = candidates.map(loc => {
+                const name = (loc.name || "").toLowerCase();
+                const q = query.toLowerCase();
+                
+                // Calculate Similarity Score
+                let matches = 0;
+                const qChars = q.split('');
+                qChars.forEach(char => {
+                    if (name.includes(char)) matches++;
+                });
+                
+                const score = matches / q.length;
+                return { ...loc, similarity: score };
+            });
+
+            // 3. Filter and Sort: Show all if > 30%, but prioritize > 90%
+            return scoredMatches
+                .filter(m => m.similarity >= 0.3)
+                .sort((a, b) => b.similarity - a.similarity)
+                .slice(0, 10);
+
         } catch (e) {
-            console.error("Search execution failed:", e);
-            return [];
+            console.error("Neural Search Engine failure:", e);
+            // Emergency Fallback
+            const { data } = await this.supabase.from('locations').select('*').limit(5).ilike('name', `%${query}%`);
+            return data || [];
         }
     }
 
     showSearchResults(matches) {
         if (!this.searchResultsPanel) return;
+        const scrollControls = document.getElementById('search-scroll-controls');
         this.searchResultsPanel.innerHTML = "";
+        
         if (matches.length > 0) {
             this.searchResultsPanel.classList.remove('hidden');
+            // Show scroll track if results exceed 5 items
+            if (scrollControls && matches.length > 5) {
+                scrollControls.classList.remove('hidden');
+                this.updateScrollHandle(); // Reset handle
+            } else if (scrollControls) {
+                scrollControls.classList.add('hidden');
+            }
+
             matches.forEach(loc => {
                 const div = document.createElement('div');
-                div.className = "glass-panel p-3 rounded-xl border border-white/10 hover:bg-white/20 cursor-pointer text-sm font-bold transition-all interactable";
-                div.innerText = loc.name;
+                div.className = "glass-panel p-3 rounded-xl border border-white/10 hover:bg-white/20 cursor-pointer text-sm font-bold transition-all interactable text-white";
+                div.innerHTML = `<div class="flex justify-between items-center">
+                    <span>${loc.name}</span>
+                    <span class="text-[10px] opacity-40 uppercase">${loc.category || 'sector'}</span>
+                </div>`;
                 div.onclick = () => {
                     this.setDestination(loc.lat, loc.lon, loc.name, loc.id, loc.category);
                     this.searchResultsPanel.classList.add('hidden');
+                    if (scrollControls) scrollControls.classList.add('hidden');
                     this.searchInput.value = loc.name;
                 };
                 this.searchResultsPanel.appendChild(div);
             });
         } else {
             this.searchResultsPanel.classList.add('hidden');
+            if (scrollControls) scrollControls.classList.add('hidden');
         }
+    }
+
+    updateScrollHandle() {
+        if (!this.scrollHandle || !this.scrollTrack || !this.searchResultsPanel) return;
+        const scrollPct = this.searchResultsPanel.scrollTop / (this.searchResultsPanel.scrollHeight - this.searchResultsPanel.clientHeight);
+        const trackHeight = this.scrollTrack.clientHeight - this.scrollHandle.clientHeight;
+        this.scrollHandle.style.top = `${scrollPct * trackHeight}px`;
     }
 
     handleHandGesture(hand) {
@@ -706,19 +978,104 @@ export class MapController {
         const localX = hand.x - mapRect.left;
         const localY = hand.y - mapRect.top;
 
-        // Detect if hand is over the Intel Panel (Right side: approx > 60% width)
-        const isOverIntel = hand.x > window.innerWidth * 0.6;
+        // Detect if hand is over the Intel Panel
+        // If minimized, intel is on the left. If full, intel is on the right.
+        const isOverIntel = this.isMinimized ? 
+            (hand.x < window.innerWidth * 0.4) : 
+            (hand.x > window.innerWidth * 0.6);
         
-        // Detect if hand is over the Minimap (when minimized)
-        const isOverMap = hand.x >= mapRect.left && hand.x <= mapRect.right &&
-                           hand.y >= mapRect.top && hand.y <= mapRect.bottom;
+        // Detect if hand is over the Map Window
+        const windowRect = this.window.getBoundingClientRect();
+        const isOverMap = hand.x >= windowRect.left && hand.x <= windowRect.right &&
+                           hand.y >= windowRect.top && hand.y <= windowRect.bottom;
 
-        // --- DOUBLE PINCH DETECTION ---
+        // --- 3D TILT ENGINE (Ares-Tilt) ---
+        if (this.isMinimized) {
+            if (isOverMap) {
+                const centerX = windowRect.left + windowRect.width / 2;
+                const centerY = windowRect.top + windowRect.height / 2;
+                const tiltX = (hand.y - centerY) / (windowRect.height / 2) * -15; 
+                const tiltY = (hand.x - centerX) / (windowRect.width / 2) * 15;
+                this.window.style.transition = "transform 0.1s ease-out";
+                this.window.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+            } else {
+                this.window.style.transition = "transform 0.5s ease-out";
+                this.window.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
+            }
+        }
+
+        // --- INTEL PANEL 3D TILT EFFECT ---
+        if (this.intelPanel && !this.intelPanel.classList.contains('hidden')) {
+            if (isOverIntel) {
+                const rect = this.intelPanel.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const tiltX = (hand.y - centerY) / (rect.height / 2) * -10; 
+                const tiltY = (hand.x - centerX) / (rect.width / 2) * 10;
+                this.intelPanel.style.transition = "transform 0.1s ease-out";
+                this.intelPanel.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+            } else {
+                this.intelPanel.style.transition = "transform 0.5s ease-out";
+                this.intelPanel.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
+            }
+        }
+
+        // --- NEURAL SLIDER DRAG LOGIC ---
+        if (hand.isPinching) {
+            // Intel Panel Scroll Logic
+            if (!this.isDraggingIntelScroll && this.intelScrollTrack) {
+                const trackRect = this.intelScrollTrack.getBoundingClientRect();
+                if (hand.x >= trackRect.left - 40 && hand.x <= trackRect.right + 40 &&
+                    hand.y >= trackRect.top - 20 && hand.y <= trackRect.bottom + 20) {
+                    this.isDraggingIntelScroll = true;
+                }
+            }
+
+            if (this.isDraggingIntelScroll && this.intelScrollTrack && this.intelContentScroll) {
+                const trackRect = this.intelScrollTrack.getBoundingClientRect();
+                const relativeY = Math.max(0, Math.min(1, (hand.y - trackRect.top) / trackRect.height));
+                this.intelContentScroll.scrollTop = relativeY * (this.intelContentScroll.scrollHeight - this.intelContentScroll.clientHeight);
+                this.updateIntelScrollHandle();
+                return;
+            }
+
+            // Search Results Scroll Logic
+            if (!this.isDraggingScroll && this.scrollTrack) {
+                const trackRect = this.scrollTrack.getBoundingClientRect();
+                // Wider hit area for spatial comfort (+40px)
+                if (hand.x >= trackRect.left - 40 && hand.x <= trackRect.right + 40 &&
+                    hand.y >= trackRect.top - 20 && hand.y <= trackRect.bottom + 20) {
+                    this.isDraggingScroll = true;
+                }
+            }
+
+            if (this.isDraggingScroll && this.scrollTrack && this.searchResultsPanel) {
+                const trackRect = this.scrollTrack.getBoundingClientRect();
+                // Calculate relative position (clamped 0-1)
+                const relativeY = Math.max(0, Math.min(1, (hand.y - trackRect.top) / trackRect.height));
+                const totalScroll = this.searchResultsPanel.scrollHeight - this.searchResultsPanel.clientHeight;
+                this.searchResultsPanel.scrollTop = relativeY * totalScroll;
+                this.updateScrollHandle();
+                return; // Suppress other gestures while scrolling
+            }
+        } else {
+            this.isDraggingScroll = false;
+        }
+
         if (hand.isPinching && !this.wasPinching) {
+            const isSearchOpen = document.getElementById('search-wrapper').classList.contains('expanded');
+            if (isSearchOpen && !isOverMap) return; // Ignore map clicks if search is active (unless on map itself if intended)
+            
+            // Lock map destination clicks if search console is focused
+            if (isSearchOpen) return; 
+
             const now = Date.now();
-            if (this.isMinimized && isOverMap && (now - this.lastPinchTime < 400)) {
+            const pinchDiff = now - this.lastPinchTime;
+            
+            // Double-Pinch Reversion Logic (500ms window)
+            if (this.isMinimized && isOverMap && pinchDiff < 500) {
                 this.toggleMinimize();
-                this.lastPinchTime = 0; // Reset
+                this.lastPinchTime = 0; // Reset to prevent triple-pinch cascade
                 return;
             }
             this.lastPinchTime = now;
@@ -768,18 +1125,16 @@ export class MapController {
                 const dx = hand.x - this.lastPinchPos.x;
                 const dy = hand.y - this.lastPinchPos.y;
 
-                if (this.isMinimized && isOverMap && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
-                    // MOVE MINIMAP WINDOW
-                    this.isMovingMinimap = true;
-                    const newTop = parseInt(this.window.style.top || 40) + dy;
-                    const newRight = parseInt(this.window.style.right || 40) - dx;
-                    this.window.style.top = `${newTop}px`;
-                    this.window.style.right = `${newRight}px`;
+                if (this.isMinimized && isOverMap && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+                    // PAN INSIDE MINIMAP (Requested Change)
+                    const mapDx = -dx * 1.5;
+                    const mapDy = -dy * 1.5;
+                    if (this.map) this.map.panBy([mapDx, mapDy], { animate: false });
                 } else if (isOverIntel && this.intelPanel) {
                     // SCROLL INTEL
                     this.intelPanel.scrollTop -= dy * 1.5; 
-                } else if (!this.isMovingMinimap) {
-                    // PAN MAP
+                } else if (!this.isMinimized) {
+                    // PAN MAIN MAP
                     const mapDx = -dx * 2;
                     const mapDy = -dy * 2;
                     if (Math.abs(mapDx) > 1 || Math.abs(mapDy) > 1) this.map.panBy([mapDx, mapDy], { animate: false });

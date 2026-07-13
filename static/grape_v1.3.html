@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grape v1.3 - X20 Pro Edition</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Roboto+Mono:wght@400;700&family=Orbitron:wght@400;700;900&family=Inter:wght@400;700&family=Syncopate:wght@700&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <!-- MediaPipe Hands -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-panel {
+                @apply bg-transparent backdrop-blur-[50px] border border-white/10 shadow-2xl;
+            }
+            .interactable {
+                @apply transition-all duration-300 ease-out cursor-pointer;
+            }
+            .interactable.clicked {
+                @apply scale-95 opacity-80;
+            }
+            .bg-gradient-1 { background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%); }
+            .bg-gradient-2 { background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); }
+            .bg-gradient-4 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            
+            /* --- NEON NODES --- */
+            /* --- CARDBOARD STEREOSCOPIC MODE (Lensless 8cm Optimization) --- */
+            body.cardboard-mode #media-right {
+                display: block !important;
+            }
+
+            #cardboard-container {
+                display: flex;
+                width: 100vw;
+                height: 100vh;
+                background: #000;
+            }
+
+            #cardboard-container::after {
+                content: '';
+                position: absolute;
+                left: 50vw; top: 0; bottom: 0;
+                width: 1px;
+                background: rgba(255, 255, 255, 0.1);
+                z-index: 10000;
+            }
+
+            .eye-viewport {
+                width: 50vw;
+                height: 100vh;
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* Base transform for lensless 8cm convergence */
+            .eye-viewport.left {
+                transform: translateX(calc(-1 * (var(--ipd-offset) + 20px))) translateY(var(--v-offset)) scale(var(--view-scale));
+            }
+
+            .eye-viewport.right {
+                transform: translateX(calc(var(--ipd-offset) + 20px)) translateY(var(--v-offset)) scale(var(--view-scale));
+            }
+
+            .star-node {
+                display: flex; justify-content: center; align-items: center;
+                background: #ff003c; width: 14px; height: 14px; border-radius: 50%;
+                box-shadow: 0 0 15px #ff003c; border: 2px solid white;
+                animation: pulse-star 2s infinite ease-in-out;
+            }
+            @keyframes pulse-star {
+                0%, 100% { transform: scale(1) !important; opacity: 1; box-shadow: 0 0 15px var(--node-glow); }
+                50% { transform: scale(1.4) !important; opacity: 0.7; box-shadow: 0 0 25px var(--node-glow); }
+            }
+            
+            .crosshair-pointer {
+                position: absolute; top: 50%; left: 50%;
+                transform: translate(-50%, -50%) !important;
+                width: 40px; height: 40px;
+                border: 2px solid #ff003c; border-radius: 50%;
+                z-index: 1001; pointer-events: none;
+                display: none;
+            }
+            .crosshair-pointer::before { width: 2px; height: 20px; top: -10px; left: 19px; }
+            .crosshair-pointer::after { width: 20px; height: 2px; top: 19px; left: -10px; }
+            .crosshair-pointer.active { display: block; animation: pulse-crosshair 1s infinite; }
+            @keyframes pulse-crosshair {
+                0%, 100% { transform: translate(-50%, -50%) scale(1) !important; opacity: 1; }
+                50% { transform: translate(-50%, -50%) scale(1.1) !important; opacity: 0.8; }
+            }
+            #input_video, #output_canvas {
+                /* Scale X for mirror. We multiply zoom by the mirror-scale */
+                transform: scaleX(var(--mirror-scale)) scale(var(--camera-zoom)) !important;
+                transform-origin: center;
+                transition: transform 0.5s ease;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="w-screen h-screen overflow-hidden bg-black select-none text-white transition-colors duration-500 dynamic-text tron-ares-bw">
+    <div id="main-wrapper" class="absolute inset-0 overflow-hidden">
+        <!-- Environmental Filters -->
+        <div id="system-grid" class="fixed inset-0 pointer-events-none opacity-0 transition-opacity duration-500 z-10">
+        </div>
+
+        <!-- Dual Viewport Media (Parallel Streams) -->
+        <div id="media-container" class="absolute inset-0 z-0 flex transition-all duration-500">
+            <div id="media-left" class="relative flex-1 overflow-hidden">
+                <video id="input_video" class="w-full h-full object-cover" autoplay playsinline></video>
+                <canvas id="output_canvas"
+                    class="absolute inset-0 w-full h-full z-10 pointer-events-none opacity-30"></canvas>
+            </div>
+            <div id="media-right" class="relative flex-1 overflow-hidden hidden">
+                <video id="input_video_right" class="w-full h-full object-cover" autoplay playsinline></video>
+                <canvas id="output_canvas_right"
+                    class="absolute inset-0 w-full h-full z-10 pointer-events-none opacity-30"></canvas>
+            </div>
+        </div>
+
+
+        <!-- Left Sidebar Toolbar -->
+        <div
+            class="sidebar-toolbar absolute top-1/2 -translate-y-1/2 left-24 z-50 pointer-events-auto flex flex-col gap-6 transition-all duration-500 origin-left">
+
+            <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size"
+                id="settings-btn" title="Control Center" data-page="1">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </div>
+            <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size"
+                data-app="music" title="Music Player" data-page="1">
+                <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                </svg>
+            </div>
+            <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size"
+                data-app="map" title="Spatial Map" data-page="1">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7">
+                    </path>
+                </svg>
+            </div>
+
+            <!-- Page 2 Icons -->
+            <div class="interactable relative flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size hidden opacity-0"
+                data-app="messages" title="Tactical Messages" data-page="2">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                </svg>
+            </div>
+            <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size hidden opacity-0"
+                data-app="compass" title="Tactical Compass" data-page="2">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                </svg>
+            </div>
+            <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size hidden opacity-0"
+                data-app="travel-reports" title="Travel Reports" data-page="2">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+
+            <!-- Page 3 Icons -->
+            <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size hidden opacity-0"
+                id="fullscreen-btn" title="Toggle Fullscreen" data-page="3">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                </svg>
+            </div>
+            <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size hidden opacity-0"
+                data-app="auth" title="Tactical Auth" data-page="3">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Page Indicator HUD (Relocated to avoid search overlap) -->
+        <div id="page-indicator" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] flex gap-2 pointer-events-none transition-all duration-500">
+            <div class="page-dot w-2 h-2 rounded-full bg-white transition-all duration-300 shadow-[0_0_10px_#fff]" data-dot="1"></div>
+            <div class="page-dot w-2 h-2 rounded-full bg-white/20 transition-all duration-300" data-dot="2"></div>
+            <div class="page-dot w-2 h-2 rounded-full bg-white/20 transition-all duration-300" data-dot="3"></div>
+        </div>
+
+        <style>
+            @keyframes star-particle {
+                0% { transform: rotate(var(--rot)) translate(0); opacity: 1; }
+                100% { transform: rotate(var(--rot)) translate(150px); opacity: 0; }
+            }
+            .star-particle { --rot: 0deg; }
+        </style>
+
+        <!-- Tactical Gold HUD (Page 3 focus - 78% Stealth Opacity) -->
+        <div id="gold-hud" class="fixed top-28 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 bg-black/40 border border-white/10 px-6 py-2 rounded-2xl shadow-[0_0_20px_rgba(234,179,8,0.1)] transition-all duration-500 pointer-events-none opacity-0 scale-90 translate-y-[-20px]" style="opacity: 0;">
+            <div class="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center shadow-[0_0_15px_#eab308] animate-pulse">
+                <span class="text-black font-black text-[10px]">G</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-[7px] font-black text-yellow-500/60 uppercase tracking-widest leading-none">Tactical Gold</span>
+                <span id="gold-balance" class="text-sm font-black text-white font-['Syncopate'] tracking-tighter leading-tight" style="opacity: 0.78;">0000</span>
+            </div>
+        </div>
+
+        <!-- Tactical Message Hub (No Background - Ghost Overlay) -->
+        <div id="message-hub" class="fixed bottom-24 right-12 z-[2500] w-[300px] flex flex-col gap-3 pointer-events-none hidden">
+            <div id="message-list" class="flex flex-col gap-2 max-h-[400px] overflow-hidden">
+                <!-- Messages will appear here as floating text -->
+            </div>
+        </div>
+
+        <!-- Notification Hub (Proximity Alerts) -->
+        <div id="notification-hub" class="fixed top-44 left-1/2 -translate-x-1/2 z-[3000] flex flex-col gap-2 pointer-events-none"></div>
+
+        <!-- Minimized Compass HUD (Bottom Center-Left of Mic) -->
+        <div id="compass-minimized-hud" class="fixed bottom-12 left-[calc(50%-60px)] -translate-x-full z-[3005] hidden interactable flex items-center gap-1 transition-all hover:scale-110">
+            <div id="compass-mini-needle" class="transition-transform duration-200">
+                <svg class="w-8 h-8 text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"></path>
+                </svg>
+            </div>
+            <div id="compass-mini-degrees" class="text-[10px] font-black text-white font-['Syncopate'] drop-shadow-[0_0_5px_#000]">0°</div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settings-panel"
+            class="absolute top-1/2 left-1/2 z-50 w-[600px] max-w-[95vw] glass-panel p-6 rounded-[32px] opacity-0 pointer-events-none transition-all duration-500 shadow-2xl">
+            <button id="btn-settings-close"
+                class="interactable absolute top-4 right-4 w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/40 border border-red-500/40 flex items-center justify-center text-red-400 transition-all z-10">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+            <div class="flex flex-col gap-6">
+                <div class="flex flex-col px-1">
+                    <h2 class="text-xl font-black tracking-tight text-white uppercase">Neural Control Center</h2>
+                    <p class="text-[10px] font-bold text-blue-400/60 uppercase tracking-[0.3em]">System Environment
+                        Config</p>
+                </div>
+
+                <!-- Main Utility Bar -->
+                <div class="grid grid-cols-4 gap-3">
+                    <div class="flex flex-col gap-2 p-3 bg-white/5 rounded-2xl border border-white/10">
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-white/40">Scale</span>
+                        <div class="flex gap-1">
+                            <button id="btn-size-down"
+                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold">-</button>
+                            <button id="btn-size-up"
+                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold">+</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 p-3 bg-white/5 rounded-2xl border border-white/10">
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-white/40">Text</span>
+                        <div class="flex gap-1">
+                            <button id="btn-text-down"
+                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold">-</button>
+                            <button id="btn-text-up"
+                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold">+</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 p-3 bg-white/5 rounded-2xl border border-white/10">
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-white/40">Mirror</span>
+                        <button id="btn-mirror-toggle"
+                            class="interactable w-full h-9 bg-white/10 hover:bg-white/20 rounded-lg font-black uppercase text-[10px] tracking-widest">Flip</button>
+                    </div>
+                    <div class="flex flex-col gap-2 p-3 bg-white/5 rounded-2xl border border-white/10">
+                        <span class="text-[9px] font-bold uppercase tracking-widest text-white/40">Stereo</span>
+                        <button id="btn-cardboard-toggle"
+                            class="interactable w-full h-9 bg-white/10 hover:bg-white/20 rounded-lg font-black uppercase text-[10px] tracking-widest">Toggle</button>
+                    </div>
+                </div>
+
+                <!-- Themes & Skins (Horizontal Split) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-3 p-4 bg-white/5 rounded-3xl border border-white/10">
+                        <div class="flex justify-between items-center px-1">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-white/40">Neural
+                                Themes</span>
+                            <input type="color" id="border-color-picker"
+                                class="w-5 h-5 bg-transparent cursor-pointer rounded-md overflow-hidden border-none">
+                        </div>
+                        <div class="grid grid-cols-5 gap-2">
+                            <button id="btn-theme-normal"
+                                class="interactable h-12 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 shadow-sm"></button>
+                            <button id="btn-theme-legacy"
+                                class="interactable h-12 bg-cyan-500/20 hover:bg-cyan-500/30 rounded-xl border border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.2)]"></button>
+                            <button id="btn-theme-ares-rb"
+                                class="interactable h-12 bg-red-600/20 hover:bg-red-600/30 rounded-xl border border-red-600/40 shadow-[0_0_10px_rgba(220,38,38,0.2)]"></button>
+                            <button id="btn-theme-ares-rw"
+                                class="interactable h-12 bg-white/20 hover:bg-white/30 rounded-xl border border-red-400/40 shadow-sm"></button>
+                            <button id="btn-theme-ares-bw"
+                                class="interactable h-12 bg-blue-100/20 hover:bg-blue-100/30 rounded-xl border border-blue-400/40 shadow-sm"></button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-3 p-4 bg-white/5 rounded-3xl border border-white/10">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-white/40 px-1">Button
+                            Skins</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btn-skin-rb"
+                                class="interactable h-11 bg-red-600/10 hover:bg-red-600/20 rounded-xl border border-red-600/30 text-[9px] font-black uppercase text-red-500 tracking-tighter">Ares
+                                RB</button>
+                            <button id="btn-skin-blue"
+                                class="interactable h-11 bg-blue-600/10 hover:bg-blue-600/20 rounded-xl border border-blue-600/30 text-[9px] font-black uppercase text-blue-500 tracking-tighter">Ares
+                                Blue</button>
+                            <button id="btn-skin-rw"
+                                class="interactable h-11 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-[9px] font-black uppercase text-red-500 tracking-tighter">Ares
+                                RW</button>
+                            <button id="btn-skin-legacy"
+                                class="interactable h-11 bg-cyan-600/10 hover:bg-cyan-600/20 rounded-xl border border-cyan-600/30 text-[9px] font-black uppercase text-cyan-500 tracking-tighter">Legacy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global Filters -->
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="btn-filter-grid"
+                        class="interactable h-12 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-2xl border border-cyan-500/30 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+                        Engage Grid Vibe
+                    </button>
+                    <button id="btn-cockpit-toggle"
+                        class="interactable h-12 bg-blue-500/10 hover:bg-blue-500/20 rounded-2xl border border-blue-500/30 text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                        Engage Cockpit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Remade Media Hub -->
+        <div id="music-player"
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-auto flex items-center justify-center transition-all duration-500 hidden w-[500px] h-[350px]">
+            <div
+                class="music-bg glass-panel rounded-[24px] w-full h-full flex flex-col relative overflow-hidden shadow-2xl border border-white/20">
+                <!-- Header -->
+                <div class="flex justify-between items-center px-4 py-2.5 border-b border-white/10 bg-white/5">
+                    <div class="flex items-center gap-2">
+                        <div
+                            class="w-6 h-6 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                            <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                            </svg>
+                        </div>
+                        <h2 class="text-sm font-bold tracking-tight text-white/80">Media Hub</h2>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="btn-minimize"
+                            class="interactable bg-white/5 hover:bg-white/10 w-12 h-12 rounded-full flex items-center justify-center border border-white/10 transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6">
+                                </path>
+                            </svg>
+                        </button>
+                        <button id="btn-close"
+                            class="interactable bg-red-500/10 hover:bg-red-500/20 w-12 h-12 rounded-full flex items-center justify-center border border-red-500/20 text-red-400 transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-1 overflow-hidden">
+                    <!-- Left Sidebar: Library & Search -->
+                    <div class="w-40 border-r border-white/5 flex flex-col bg-black/20 backdrop-blur-md">
+                        <div class="p-3 flex flex-col gap-2">
+                            <div
+                                class="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1.5 border border-white/10">
+                                <input type="text" id="yt-link-input" placeholder="YouTube..."
+                                    class="bg-transparent outline-none border-none text-[10px] w-full text-white placeholder-white/30">
+                                <button id="btn-yt-load"
+                                    class="interactable text-[9px] font-bold px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-md hover:bg-blue-500/30">GO</button>
+                            </div>
+
+                            <label
+                                class="interactable bg-white/5 hover:bg-white/10 p-2 rounded-lg cursor-pointer text-[9px] font-bold flex items-center justify-center gap-1.5 border border-white/10 transition-colors">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                UPLOAD
+                                <input type="file" id="music-file-input" accept="audio/*" class="hidden">
+                            </label>
+                        </div>
+
+                        <div class="flex flex-1 overflow-hidden">
+                            <div id="media-list"
+                                class="flex-1 overflow-y-auto px-2 py-1 flex flex-col gap-0.5 scrollbar-hide scroll-smooth">
+                                <div class="text-[8px] opacity-30 uppercase tracking-[0.2em] px-2 py-1.5 font-bold">
+                                    Library</div>
+                                <!-- Songs injected by JS -->
+                            </div>
+
+                            <!-- Tactical Scroll Slider -->
+                            <div id="music-scroll-track"
+                                class="w-8 border-l border-white/5 bg-white/5 flex flex-col items-center py-2 gap-2 relative">
+                                <div id="music-scroll-thumb"
+                                    class="interactable w-4 bg-blue-500/30 border border-blue-500/50 rounded-full transition-all hover:bg-blue-500/50 absolute top-2"
+                                    style="height: 60px;">
+                                    <div
+                                        class="w-full h-full flex flex-col items-center justify-center gap-1 opacity-40">
+                                        <div class="w-1.5 h-0.5 bg-white rounded-full"></div>
+                                        <div class="w-1.5 h-0.5 bg-white rounded-full"></div>
+                                        <div class="w-1.5 h-0.5 bg-white rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content: Visualizer & Player -->
+                    <div class="flex-1 relative flex flex-col bg-gradient-to-br from-black/40 to-transparent">
+                        <div id="yt-player-container" class="hidden absolute inset-0 z-10 bg-black">
+                            <iframe id="yt-iframe" class="w-full h-full" src="" frameborder="0"
+                                allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                        </div>
+
+                        <div class="flex-1 flex flex-col items-center justify-center p-6 z-0">
+                            <div class="w-full flex flex-col items-center gap-1 mb-4">
+                                <h3 id="now-playing-title"
+                                    class="text-lg font-bold text-center tracking-tight text-white leading-tight">No
+                                    Track</h3>
+                                <p id="now-playing-artist"
+                                    class="text-[8px] font-bold text-blue-400/60 uppercase tracking-widest">Mission
+                                    Signal</p>
+                            </div>
+
+                            <canvas id="visualizer-canvas" class="w-full h-24 opacity-80"></canvas>
+                        </div>
+
+                        <!-- Floating Controls Overlay -->
+                        <div
+                            class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-white/5 backdrop-blur-2xl border border-white/10 px-6 py-2.5 rounded-full shadow-2xl z-20">
+                            <button id="btn-loop" class="interactable text-white/40 hover:text-white transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                    </path>
+                                </svg>
+                            </button>
+                            <button id="btn-play"
+                                class="interactable w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 text-blue-400 hover:bg-blue-500/30 transition-all scale-110">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                            </button>
+                            <button id="btn-shuffle"
+                                class="interactable text-white/40 hover:text-white transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 4H10M4 12H10M4 20H10M14 7L21 7M14 17L21 17M14 12L21 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <audio id="audio-element" class="hidden"></audio>
+        </div>
+
+        <!-- Mini Player (Minimized State: Only Transparent Visualizer) -->
+        <div id="mini-player"
+            class="absolute bottom-10 right-10 z-[100] hidden transition-all duration-500 w-44 h-16 overflow-hidden pointer-events-auto">
+            <canvas id="mini-visualizer-canvas" class="w-full h-full interactable"
+                title="Pinch to show controls"></canvas>
+
+            <!-- Dynamic Mini Controls (Pop up from thin air) -->
+            <div id="mini-controls"
+                class="absolute inset-0 flex items-center justify-center gap-4 opacity-0 pointer-events-none transition-all duration-500">
+                <button id="btn-mini-loop" class="interactable text-white/40 hover:text-white transition-colors p-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                </button>
+                <button id="btn-mini-prev"
+                    class="interactable w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 text-white hover:bg-white/20 transition-all">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+                    </svg>
+                </button>
+                <button id="btn-mini-play"
+                    class="interactable w-14 h-14 rounded-full bg-blue-500/30 flex items-center justify-center border border-blue-500/40 text-blue-400 hover:bg-blue-500/40 transition-all scale-110">
+                    <svg class="w-6 h-6" id="mini-play-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                    </svg>
+                </button>
+                <button id="btn-mini-next"
+                    class="interactable w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 text-white hover:bg-white/20 transition-all">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Fullscreen Map Window -->
+        <div id="map-window"
+            class="absolute inset-0 z-[70] pointer-events-auto flex items-center justify-center transition-all duration-500 hidden px-6 py-4">
+            <!-- Main Map Panel -->
+            <div class="glass-panel p-2 rounded-[40px] w-full h-full flex flex-col relative overflow-hidden shadow-2xl">
+                <div
+                    class="absolute top-6 left-12 right-6 z-[999] flex justify-between items-start pointer-events-none">
+                    <div class="pointer-events-auto flex flex-col gap-4">
+                        <!-- Search Hub (Toggle in corner) -->
+                        <div id="search-wrapper"
+                            class="flex items-center bg-black/40 backdrop-blur-md rounded-full border border-white/20 transition-all duration-500 w-8 h-8 max-w-[14rem] overflow-hidden shadow-2xl">
+                            <button id="btn-search-toggle"
+                                class="interactable min-w-[2rem] h-8 flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity bg-transparent border-none">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </button>
+                            <input type="text" id="map-search-input" placeholder="Search Neural Network..."
+                                class="interactable bg-transparent outline-none border-none text-[10px] w-0 px-0 text-white placeholder-white/30 transition-all duration-500 font-bold uppercase tracking-widest">
+                            <button id="btn-map-search"
+                                class="interactable opacity-0 transition-all duration-500 text-[10px] font-black px-4 py-1 bg-blue-500/30 text-blue-400 rounded-full hover:bg-blue-500/50 mr-1 whitespace-nowrap hidden shadow-[0_0_10px_rgba(59,130,246,0.3)]">GO</button>
+                            <button id="btn-search-clear"
+                                class="interactable opacity-0 transition-all duration-500 bg-red-500/10 text-red-500/60 hover:text-red-400 hover:bg-red-500/20 w-6 h-6 rounded-full border border-red-500/20 flex items-center justify-center mr-1 hidden">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button id="btn-map-close"
+                        class="interactable pointer-events-auto bg-black/60 backdrop-blur text-white hover:bg-white/20 w-16 h-16 rounded-full flex items-center justify-center shadow-lg border border-white/20">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="map-container" class="w-full h-full rounded-[36px] overflow-hidden"></div>
+
+                <!-- Real-time Search Results Overlay -->
+                <div id="map-search-results-wrapper"
+                    class="absolute top-24 left-12 z-[1000] flex items-stretch gap-2 pointer-events-none h-[50vh]">
+                    <div id="map-search-results"
+                        class="w-44 flex flex-col gap-1 pointer-events-auto overflow-y-auto scrollbar-hide hidden">
+                    </div>
+                    <div id="search-scroll-controls" class="flex flex-col items-center pointer-events-auto w-4 hidden">
+                        <div id="search-scroll-track"
+                            class="w-1 bg-white/10 rounded-full h-full relative border border-white/5">
+                            <div id="search-scroll-handle"
+                                class="interactable absolute top-0 left-1/2 -translate-x-1/2 w-4 h-12 bg-blue-500/30 hover:bg-blue-500/50 rounded-full border border-blue-500/50 cursor-pointer shadow-[0_0_10px_rgba(59,130,246,0.3)]">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+            </div>
+
+            <!-- Big Controls (Outside Map Panel - Top Center Bar) -->
+            <div id="map-controls-bar"
+                class="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex flex-row gap-3 bg-black/40 backdrop-blur-md p-1.5 rounded-[24px] border border-white/10 shadow-2xl transition-all duration-500">
+                <button id="btn-map-zoom-in"
+                    class="interactable bg-black/60 text-white hover:bg-white/20 w-16 h-14 rounded-xl flex items-center justify-center border border-white/20 text-2xl font-bold">+</button>
+                <button id="btn-map-zoom-out"
+                    class="interactable bg-black/60 text-white hover:bg-white/20 w-16 h-14 rounded-xl flex items-center justify-center border border-white/20 text-2xl font-bold">-</button>
+                <button id="btn-map-locate" title="Locate Me"
+                    class="interactable bg-black/60 text-white hover:bg-white/20 w-16 h-14 rounded-xl flex items-center justify-center border border-white/20">
+                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                    </svg>
+                </button>
+                <button id="btn-map-marker" title="Place Marker"
+                    class="interactable bg-black/60 text-white hover:bg-white/20 w-16 h-14 rounded-xl flex items-center justify-center border border-white/20">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </button>
+                <button id="btn-map-clear" title="Clear All Markers"
+                    class="interactable bg-black/60 text-red-400 hover:bg-white/20 w-16 h-14 rounded-xl flex items-center justify-center border border-white/20">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                        </path>
+                    </svg>
+                </button>
+                <button id="btn-map-stop" title="Stop Navigation"
+                    class="interactable bg-red-600/40 text-white hover:bg-red-600/60 w-12 h-10 rounded-xl flex items-center justify-center border border-red-500/50 hidden">
+                    <span class="font-bold text-[8px] uppercase tracking-widest">STOP</span>
+                </button>
+                <button id="btn-map-minimize" title="Minimize Map"
+                    class="interactable bg-black/60 text-white hover:bg-white/20 w-16 h-14 rounded-xl flex items-center justify-center border border-white/20">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Destination Intel Toggle (Bottom Right - Enhanced Visibility) -->
+            <button id="btn-intel-toggle" title="Sector Intelligence"
+                class="interactable absolute bottom-12 right-12 z-[2005] bg-black text-white w-20 h-20 rounded-3xl flex items-center justify-center border-2 border-blue-500 shadow-[0_0_35px_rgba(59,130,246,0.6)] transition-all hover:bg-blue-600 hover:scale-110 active:scale-95">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Tactical Compass Panel -->
+        <div id="compass-panel" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[300] hidden w-[320px] glass-panel p-6 rounded-[40px] shadow-2xl border border-white/10 pointer-events-auto">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter">Compass Intel</h2>
+                    <p id="compass-status" class="text-[9px] font-bold text-blue-400 uppercase tracking-[0.2em]">Magnetometer Active</p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-compass-minimize" class="interactable w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <button id="btn-compass-close" class="interactable w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20 hover:bg-red-500/30 text-red-400 transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex flex-col items-center gap-8 py-4">
+                <div class="relative w-48 h-48 rounded-full border-4 border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+                    <div class="absolute inset-0 rotate-0 flex flex-col items-center justify-start py-2 font-bold text-xs text-red-500">N</div>
+                    <div class="absolute inset-0 rotate-90 flex flex-col items-center justify-start py-2 font-bold text-xs text-white/40">E</div>
+                    <div class="absolute inset-0 rotate-180 flex flex-col items-center justify-start py-2 font-bold text-xs text-white/40">S</div>
+                    <div class="absolute inset-0 rotate-[270deg] flex flex-col items-center justify-start py-2 font-bold text-xs text-white/40">W</div>
+                    <div id="compass-needle" class="absolute w-1 h-32 bg-gradient-to-b from-red-500 via-white to-white/20 rounded-full transition-transform duration-200 shadow-[0_0_15px_rgba(239,68,68,0.5)]"></div>
+                    <div class="w-4 h-4 rounded-full bg-white z-10 shadow-[0_0_10px_#fff]"></div>
+                </div>
+                <div class="text-center">
+                    <div id="compass-degrees" class="text-4xl font-black text-white font-['Syncopate'] tracking-tighter">000°</div>
+                    <div id="compass-direction" class="text-xs font-bold text-blue-400 uppercase tracking-widest mt-1">NORTH</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tactical Auth Panel (Phantom Ghost Mode - Ultra Lightweight) -->
+        <div id="auth-panel" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[300] hidden w-[320px] p-6 pointer-events-auto transition-transform duration-500 will-change-transform">
+            <div id="auth-keyboard-btn" class="interactable absolute -left-20 top-0 w-12 h-12 glass-panel rounded-full flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                </svg>
+            </div>
+
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter">Identity Portal</h2>
+                    <p id="auth-status" class="text-[9px] font-bold text-blue-400 uppercase tracking-[0.2em]">Security Protocol 1.0</p>
+                </div>
+                <button id="btn-auth-close" class="interactable w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="auth-form" class="flex flex-col gap-4">
+                <div class="bg-black/40 border border-white/10 rounded-2xl px-4 flex flex-col py-2">
+                    <span class="text-[8px] font-black text-white/40 uppercase tracking-widest">User ID</span>
+                    <input type="text" id="auth-user-id" placeholder="ID..." 
+                        class="bg-transparent border-none text-white text-xs font-bold w-full focus:outline-none placeholder:text-white/10 h-8">
+                </div>
+                <div class="bg-black/40 border border-white/10 rounded-2xl px-4 flex flex-col py-2">
+                    <span class="text-[8px] font-black text-white/40 uppercase tracking-widest">Access Key</span>
+                    <input type="password" id="auth-password" placeholder="••••••••" 
+                        class="bg-transparent border-none text-white text-xs font-bold w-full focus:outline-none placeholder:text-white/10 h-8">
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-auth-login" class="interactable flex-1 h-12 bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 border border-blue-500/40 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all">
+                        Login
+                    </button>
+                    <button id="btn-auth-signup" class="interactable flex-1 h-12 bg-white/5 hover:bg-white/10 text-white/60 border border-white/10 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition-all">
+                        Sign Up
+                    </button>
+                </div>
+            </div>
+
+            <div id="auth-profile" class="hidden flex flex-col items-center gap-4 py-4">
+                <div class="w-20 h-20 rounded-full border-2 border-blue-500/50 flex items-center justify-center bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                    <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <div class="text-center">
+                    <div id="auth-profile-name" class="text-lg font-black text-white uppercase tracking-tighter">USER</div>
+                    <div class="flex gap-2 justify-center mt-2">
+                        <div id="badge-admin" class="hidden px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[8px] font-black uppercase tracking-widest">Admin</div>
+                        <div id="badge-guide" class="hidden px-2 py-0.5 rounded-full bg-green-500/20 border border-green-500/40 text-green-400 text-[8px] font-black uppercase tracking-widest">Guide</div>
+                    </div>
+                </div>
+                <button id="btn-auth-logout" class="interactable mt-4 text-[8px] font-black text-white/40 uppercase tracking-widest hover:text-red-400 transition-all">Terminate Session</button>
+            </div>
+        </div>
+
+        <!-- Travel Reports Panel -->
+        <div id="travel-reports-panel" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[300] hidden w-[410px] glass-panel p-5 rounded-[36px] shadow-2xl border border-white/10 pointer-events-auto">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex flex-col">
+                    <h2 class="text-lg font-black text-white uppercase tracking-tighter leading-tight">Travel Reports</h2>
+                    <p id="travel-location-name" class="text-[8px] font-bold text-blue-400 uppercase tracking-[0.2em]">Neural Link Standby</p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-travel-location" class="interactable px-2.5 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/40 hover:bg-blue-500/40 text-blue-400 font-bold text-[8px] tracking-widest uppercase transition-all">
+                        GPS
+                    </button>
+                    <button id="btn-travel-close" class="interactable w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20 hover:bg-red-500/30 text-red-400 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tactical Search Blade -->
+            <div class="flex gap-2 mb-3">
+                <div class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input type="text" id="travel-search-input" placeholder="SECTOR..." 
+                        class="bg-transparent border-none text-white text-[9px] font-bold w-full focus:outline-none placeholder:text-white/20 h-7">
+                </div>
+                <button id="btn-travel-search" class="interactable w-9 h-7 bg-white/10 rounded-lg flex items-center justify-center border border-white/10 hover:bg-white/20 text-white transition-all text-[8px] font-bold">
+                    GO
+                </button>
+            </div>
+            
+            <div class="relative flex-1 flex gap-2 min-h-0">
+                <div id="travel-reports-list" class="flex-1 flex flex-col gap-2 max-h-[270px] overflow-y-auto pr-1 scrollbar-hide">
+                    <div class="text-center text-white/20 py-8 font-bold uppercase tracking-widest text-[8px]">Initialize Neural Link.</div>
+                </div>
+                
+                <!-- Tactical Scroll Blade -->
+                <div id="travel-scroll-track" class="w-2.5 h-full bg-white/5 rounded-full relative overflow-hidden hidden border border-white/5">
+                    <div id="travel-scroll-handle" class="absolute top-0 left-0 w-full h-20 bg-blue-400/80 rounded-full shadow-[0_0_15px_#60a5fa] transition-all hover:bg-blue-400 cursor-pointer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consolidated Tactical Intel Hub (Monolith Obsidian Edition) -->
+        <div id="tactical-intel"
+            class="absolute top-12 right-6 z-[2000] w-[380px] flex flex-col pointer-events-auto max-h-[85%] overflow-hidden hidden font-['Outfit']">
+            <!-- Obsidian Header Area (Streamlined) -->
+            <div
+                class="bg-black p-4 rounded-t-[40px] border-2 border-blue-500/50 flex flex-col border-b-0 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex flex-col">
+                        <h2 id="intel-name"
+                            class="text-lg font-black text-white uppercase tracking-tight leading-none mb-1 intel-text-outline">
+                            Sector Link</h2>
+                        <p id="intel-category"
+                            class="text-[9px] font-bold text-blue-400 uppercase tracking-[0.2em] intel-text-outline font-['Roboto_Mono']">
+                            Tactical Feed Active</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btn-intel-destination"
+                            class="interactable px-4 py-2 bg-green-500/20 hover:bg-green-500 text-green-400 hover:text-black border border-green-500/50 rounded-xl font-black tracking-widest uppercase text-[10px] transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] font-['Outfit']">
+                            LOCK
+                        </button>
+                        <button id="btn-intel-close"
+                            class="interactable bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center border border-white/20">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modular Tabs (Lifted Up) -->
+                <div class="flex gap-1 bg-white/5 p-1 rounded-2xl">
+                    <button
+                        class="intel-tab-btn interactable flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-blue-600 text-white font-['Outfit'] border border-blue-400"
+                        data-target="overview">INTEL</button>
+                    <button
+                        class="intel-tab-btn interactable flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-white font-['Outfit']"
+                        data-target="stories">STORIES</button>
+                    <button
+                        class="intel-tab-btn interactable flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-white font-['Outfit']"
+                        data-target="reviews">REVIEWS</button>
+                    <button
+                        class="intel-tab-btn interactable flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-white font-['Outfit']"
+                        data-target="reports">TRAVEL</button>
+                </div>
+            </div>
+
+            <!-- Scrollable Content & Slider -->
+            <div
+                class="flex flex-row flex-1 bg-black rounded-b-[40px] border-2 border-blue-500/50 border-t-0 overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+                <div id="intel-content-scroll" class="flex-1 p-6 overflow-y-auto scrollbar-hide">
+                    <div class="flex flex-col gap-8">
+                        <section id="intel-overview-section" class="intel-section">
+                            <h3
+                                class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4 border-b border-blue-500/20 pb-2 font-['Outfit'] intel-text-outline">
+                                Sector Telemetry</h3>
+
+                            <!-- Consolidated Route Info -->
+                            <div id="map-route-info"
+                                class="bg-white/5 p-4 rounded-2xl border border-white/10 mb-6 hidden">
+                                <div class="flex justify-between items-center mb-3">
+                                    <span
+                                        class="text-[9px] font-bold text-white/40 uppercase tracking-widest intel-text-outline font-['Roboto_Mono']">Arrival
+                                        Profile</span>
+                                    <span id="route-time"
+                                        class="text-blue-300 text-[11px] font-bold intel-text-outline font-['Roboto_Mono']">--
+                                        min</span>
+                                </div>
+                                <div id="route-distance"
+                                    class="text-white text-3xl font-black tracking-tighter intel-text-outline font-['Outfit']">
+                                    -- km</div>
+                            </div>
+
+                            <!-- Route Options Injection Point -->
+                            <div id="route-list" class="flex flex-col gap-3 mb-6"></div>
+
+                            <div id="intel-overview"
+                                class="flex flex-col gap-4 text-white/90 text-[12px] leading-relaxed intel-text-outline">
+                                Initializing sector link...
+                            </div>
+                        </section>
+                        <section id="intel-stories-section" class="intel-section hidden">
+                            <h3
+                                class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4 border-b border-blue-500/20 pb-2 font-['Outfit'] intel-text-outline">
+                                Mission Stories</h3>
+                            <div id="intel-stories"
+                                class="flex flex-col gap-3 text-[11px] text-white/80 intel-text-outline"></div>
+                        </section>
+                        <section id="intel-reviews-section" class="intel-section hidden">
+                            <h3
+                                class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4 border-b border-blue-500/20 pb-2 font-['Outfit'] intel-text-outline">
+                                Field Reviews</h3>
+                            <div id="intel-reviews"
+                                class="flex flex-col gap-3 text-[11px] text-white/80 intel-text-outline"></div>
+                        </section>
+                        <section id="intel-reports-section" class="intel-section hidden">
+                            <h3
+                                class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4 border-b border-blue-500/20 pb-2 font-['Outfit'] intel-text-outline">
+                                Tactical Logistics</h3>
+                            <div id="intel-reports"
+                                class="flex flex-col gap-3 text-[11px] text-white/80 intel-text-outline"></div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Intel Neural Slider (Obsidian Edition) -->
+                <div id="intel-scroll-controls"
+                    class="w-6 bg-white/5 border-l border-white/5 flex flex-col items-center py-6">
+                    <div id="intel-scroll-track" class="w-1 h-full bg-white/10 rounded-full relative">
+                        <div id="intel-scroll-handle"
+                            class="interactable absolute top-0 left-1/2 -translate-x-1/2 w-4 h-16 bg-blue-500/30 hover:bg-blue-500/50 rounded-full border border-blue-500/50 cursor-pointer shadow-[0_0_15px_rgba(59,130,246,0.4)]">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Virtual Keyboard Overlay -->
+        <div id="keyboard-overlay"
+            class="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-2 p-4 glass-panel rounded-[32px] w-[98vw] transition-all duration-300">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-xs font-bold opacity-50 uppercase tracking-widest">Neural Input Deck</h2>
+                <button id="btn-keyboard-close"
+                    class="interactable bg-red-500/20 hover:bg-red-500/40 w-12 h-12 rounded-full flex items-center justify-center border border-red-500/50 text-red-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Input Display -->
+            <div id="keyboard-display"
+                class="bg-white/10 px-8 py-2 rounded-2xl text-lg tracking-widest border border-white/20 min-h-[40px] flex items-center font-bold">
+            </div>
+
+            <!-- Keys -->
+            <div id="keyboard-keys" class="grid grid-cols-10 gap-2 mt-2">
+                <!-- Keys injected by JS -->
+            </div>
+
+            <!-- Bottom Row -->
+            <div class="flex gap-2 mt-4">
+                <button class="interactable flex-1 bg-white/10 py-4 rounded-xl font-bold text-sm"
+                    data-key="switch-123">123</button>
+                <button class="interactable flex-1 bg-white/10 py-4 rounded-xl font-bold text-sm"
+                    data-key="switch-sym">#+=</button>
+                <button id="btn-keyboard-mic"
+                    class="interactable flex-1 bg-blue-500/20 py-4 rounded-xl text-blue-400 flex items-center justify-center border border-blue-500/40">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
+                        </path>
+                    </svg>
+                </button>
+                <button class="interactable flex-[5] bg-white/10 py-4 rounded-xl text-sm font-bold"
+                    data-key=" ">SPACE</button>
+                <button class="interactable flex-1 bg-red-500/20 py-4 rounded-xl text-red-500 text-lg font-bold"
+                    data-key="backspace">⌫</button>
+                <button class="interactable flex-1 bg-blue-500/20 py-4 rounded-xl text-blue-500 text-sm font-bold"
+                    data-key="enter">GO</button>
+                <button id="btn-keyboard-tactical-close"
+                    class="interactable flex-1 bg-red-600/20 py-4 rounded-xl text-red-400 flex items-center justify-center border border-red-500/40">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+
+
+        <!-- Cardboard Calibration Panel -->
+        <div id="cardboard-panel"
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[3000] w-[500px] glass-panel p-10 rounded-[40px] hidden opacity-0 transition-all duration-300">
+            <div class="flex flex-col gap-8">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-blue-400">AR Box Config</h2>
+                    <button id="btn-cardboard-panel-close"
+                        class="interactable bg-white/10 hover:bg-white/20 w-14 h-14 rounded-full flex items-center justify-center border border-white/20">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-bold uppercase tracking-widest opacity-60">Eye Separation
+                                (IPD)</span>
+                            <span id="val-ipd" class="text-blue-400 font-bold">0px</span>
+                        </div>
+                        <input type="range" id="range-ipd" min="-100" max="100" value="0"
+                            class="w-full accent-blue-500">
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-bold uppercase tracking-widest opacity-60">Vertical Offset</span>
+                            <span id="val-voff" class="text-blue-400 font-bold">0px</span>
+                        </div>
+                        <input type="range" id="range-voff" min="-50" max="50" value="0" class="w-full accent-blue-500">
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-bold uppercase tracking-widest opacity-60">View Scale</span>
+                            <span id="val-vscale" class="text-blue-400 font-bold">1.0</span>
+                        </div>
+                        <input type="range" id="range-vscale" min="0.5" max="1.5" step="0.05" value="1.0"
+                            class="w-full accent-blue-500">
+                    </div>
+                </div>
+
+                <button id="btn-physics-fix"
+                    class="interactable w-full py-6 bg-blue-500/20 hover:bg-blue-500/30 rounded-3xl border border-blue-500/40 text-blue-400 font-bold uppercase tracking-widest text-lg">
+                    Apply Neural Calibration (8cm Fix)
+                </button>
+
+                <div
+                    class="flex flex-col gap-4 p-4 bg-blue-500/5 rounded-3xl border border-blue-500/20 text-xs text-blue-300/60 leading-relaxed italic">
+                    Physics Specs: IPD convergence, Near-field scaling, and Gaze curvature compensation.
+                </div>
+            </div>
+        </div>
+
+        <!-- Combined Voice Assistant Hub -->
+        <div
+            class="fixed bottom-12 left-1/2 -translate-x-1/2 z-[3000] flex flex-col items-center gap-4 pointer-events-none">
+
+            <!-- Results & Status Overlay (Now ABOVE the button) -->
+            <div id="mic-overlay"
+                class="transition-all duration-500 hidden opacity-0 flex flex-col-reverse items-center w-[300px]">
+
+                <!-- Status & Transcribe (Now below the results) -->
+                <div class="flex flex-col items-center mt-2">
+                    <div class="flex items-center gap-2">
+                        <div id="mic-indicator" class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                        <span id="mic-status"
+                            class="tracking-widest uppercase font-bold text-center text-[8px] text-white/60"
+                            style="text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;">Tactical
+                            Scan Active</span>
+                    </div>
+                    <div id="mic-transcription"
+                        class="text-[8px] font-mono text-blue-400 opacity-60 italic text-center w-full mt-1"
+                        style="text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;"></div>
+                </div>
+
+                <!-- Clickable Results Container (Now at the top) -->
+                <div id="mic-options" class="w-full flex flex-col gap-1 hidden pointer-events-auto">
+                </div>
+            </div>
+
+            <!-- The Search Button (Mic Toggle) -->
+            <button id="btn-mic-toggle"
+                class="interactable w-14 h-14 bg-transparent hover:bg-white/5 transition-all duration-300 group flex items-center justify-center pointer-events-auto rounded-full border-none">
+                <svg class="w-8 h-8 text-white/40 group-hover:text-white transition-all" id="mic-icon-svg" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="spatial-cursor" class="spatial-cursor"></div>
+        <div id="spatial-cursor-ring" class="spatial-cursor-ring"></div>
+
+        <!-- Right Eye Cursor for Cardboard Mode -->
+        <div id="spatial-cursor-right" class="spatial-cursor hidden"></div>
+        <div id="spatial-cursor-ring-right" class="spatial-cursor-ring hidden"></div>
+    </div> <!-- End main-wrapper -->
+
+    <script type="module" src="/static/js/main.js"></script>
+
+    <div style="position:fixed;bottom:10px;right:10px;color:rgba(255,255,255,0.5);font-size:12px;z-index:9999;">developed by pheonix14</div>
+</body>
+
+</html>
