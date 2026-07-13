@@ -171,14 +171,7 @@
             </div>
 
             <!-- Page 2 Icons -->
-            <div class="interactable relative flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size hidden opacity-0"
-                data-app="messages" title="Messages" data-page="2">
-                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
-                    </path>
-                </svg>
-            </div>
+
             <div class="interactable flex items-center justify-center w-14 h-14 rounded-full glass-panel hover:bg-white/20 app-icon-size hidden opacity-0"
                 data-app="compass" title="Compass" data-page="2">
                 <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,11 +244,11 @@
                 style="opacity: 0.78;">0000</span>
         </div>
 
-        <!-- Message Hub (No Background - Ghost Overlay) -->
+        <!-- Message Hub (Auto Logger - Always Visible Right Side) -->
         <div id="message-hub"
-            class="fixed bottom-24 right-12 z-[2500] w-[300px] flex flex-col gap-3 pointer-events-none hidden">
+            class="fixed bottom-24 right-3 z-[2500] w-[220px] flex flex-col gap-3 pointer-events-none">
             <div id="message-list" class="flex flex-col gap-2 max-h-[400px] overflow-hidden">
-                <!-- Messages will appear here as floating text -->
+                <!-- Messages auto-appear here as floating logger -->
             </div>
         </div>
 
