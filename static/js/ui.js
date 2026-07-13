@@ -56,8 +56,8 @@ export class UIController {
             this.cursorRingRight.style.left = `${xRight}px`;
             this.cursorRingRight.style.top = `${y}px`;
             
-            // Sync visibility with Cardboard Mode (only show if stereoscopic is active)
-            if (document.body.classList.contains('cardboard-mode')) {
+            // Sync visibility with primary (only show if app-open)
+            if (document.body.classList.contains('app-open')) {
                 this.cursorRight.classList.remove('hidden');
                 this.cursorRingRight.classList.remove('hidden');
             } else {
@@ -156,8 +156,8 @@ export class UIController {
                 let transform = `perspective(1200px) scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
                 
                 if (panel.id === 'settings-panel') {
-                     // Keep its absolute centering (X and Y)
-                     panel.style.transform = `translate(-50%, -50%) ${transform}`;
+                     // Keep its vertical centering
+                     panel.style.transform = `translateY(-50%) ${transform}`;
                 } else {
                      panel.style.transform = transform;
                 }

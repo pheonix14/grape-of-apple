@@ -16,51 +16,25 @@ export class VirtualKeyboard {
 
         this.bindEvents();
         
-        // Close buttons
+        // Close button
         const closeBtn = document.getElementById('btn-keyboard-close');
         if (closeBtn) closeBtn.addEventListener('click', () => this.close());
-
-        const tacticalCloseBtn = document.getElementById('btn-keyboard-tactical-close');
-        if (tacticalCloseBtn) tacticalCloseBtn.addEventListener('click', () => this.close());
     }
 
     bindEvents() {
+        // Global focus listener to trigger keyboard
+        document.addEventListener('focusin', (e) => {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
+                this.open(e.target);
+            }
+        });
+
         this.overlay.addEventListener('click', (e) => {
-            const key = e.target.closest('[data-key]')?.getAttribute('data-key');
+            const key = e.target.getAttribute('data-key');
             if (key) {
                 this.handleKeyPress(key);
             }
         });
-
-        // Keyboard Mic: Voice-to-Text directly into input
-        const micBtn = document.getElementById('btn-keyboard-mic');
-        if (micBtn) {
-            micBtn.addEventListener('click', () => {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (SpeechRecognition) {
-                    const recognition = new SpeechRecognition();
-                    recognition.lang = 'en-US';
-                    recognition.onstart = () => {
-                        this.display.innerText = "Listening...";
-                        micBtn.classList.add('bg-blue-500/60');
-                    };
-                    recognition.onresult = (event) => {
-                        const transcript = event.results[0][0].transcript;
-                        this.currentValue = transcript;
-                        this.render();
-                        if (this.targetInput) {
-                            this.targetInput.value = this.currentValue;
-                            this.targetInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                    };
-                    recognition.onend = () => {
-                        micBtn.classList.remove('bg-blue-500/60');
-                        if (this.display.innerText === "Listening...") this.render();
-                    };
-                    recognition.start();
-                }
-            });
-        }
     }
 
     open(input) {
@@ -83,7 +57,7 @@ export class VirtualKeyboard {
         const set = this.layouts[this.currentSet];
         set.forEach(key => {
             const btn = document.createElement('button');
-            btn.className = 'interactable bg-white/10 py-4 rounded-xl hover:bg-white/20 font-bold text-xl uppercase';
+            btn.className = 'interactable bg-white/10 py-10 rounded-2xl hover:bg-white/20 font-bold text-3xl uppercase';
             btn.innerText = key;
             btn.setAttribute('data-key', key);
             this.keysContainer.appendChild(btn);
@@ -100,14 +74,9 @@ export class VirtualKeyboard {
         } else if (key === 'enter') {
             if (this.targetInput) {
                 this.targetInput.value = this.currentValue;
-                // 1. Dispatch native Enter event for controllers listening to keyup/keypress
-                this.targetInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter', bubbles: true }));
-                this.targetInput.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
-                
-                // 2. Fallback: Search for sibling GO buttons in the immediate container
-                const container = this.targetInput.closest('.flex') || this.targetInput.parentElement;
-                const searchBtn = container.querySelector('button');
-                if (searchBtn && searchBtn.innerText.includes('GO')) searchBtn.click();
+                // Trigger any search button if present
+                const searchBtn = this.targetInput.parentElement.querySelector('button');
+                if (searchBtn) searchBtn.click();
             }
             this.close();
             return;
@@ -117,7 +86,6 @@ export class VirtualKeyboard {
         
         if (this.targetInput) {
             this.targetInput.value = this.currentValue;
-            this.targetInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
         this.render();
     }

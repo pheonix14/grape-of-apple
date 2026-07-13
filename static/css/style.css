@@ -1,9 +1,6 @@
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
 :root {
     --cursor-size: 16px;
-    --app-size: 62px;
+    --app-size: 64px;
     --hover-scale: 1.25;
     --camera-zoom: 1;
     --text-size: 16px;
@@ -31,105 +28,57 @@ body {
     color: var(--text-primary);
 }
 
+.dynamic-text {
+    /* No longer needed but kept for compatibility */
+}
+
+/* Ensure all interactive text scales */
 .interactable, .glass-panel, input, button, span, h2, h3, div {
     font-size: 1em;
 }
 
 .sidebar-toolbar {
     transform: translateY(-50%) scale(var(--panel-scale));
-    transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
-    transform-style: preserve-3d;
-    perspective: 1000px;
+    transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
 }
 
-#search-wrapper {
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.8) translateZ(-100px);
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* App Open State - Shrink Sidebar */
+body.app-open .sidebar-toolbar {
+    transform: translateY(-50%) scale(calc(var(--panel-scale) * 0.6));
+    opacity: 0.4;
 }
 
-body.active-map #search-wrapper {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    transform: scale(1.1) translateZ(50px) !important;
-    filter: none !important;
-    border-color: #00f2ff !important;
-    box-shadow: 0 0 30px rgba(0, 242, 255, 0.4);
+body.app-open .sidebar-toolbar:hover {
+    transform: translateY(-50%) scale(var(--panel-scale));
+    opacity: 1;
 }
 
-body.app-open .sidebar-toolbar .interactable:not(.active-app):not([data-app="music"]) {
-    transform: scale(0.5) translateZ(-200px) rotateY(20deg) !important;
-    opacity: 0.15 !important;
-    filter: blur(2px) grayscale(0.5);
-    pointer-events: none;
-    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-body.active-music .sidebar-toolbar [data-app="music"] {
-    transform: scale(1.2) translateZ(80px) !important;
-    opacity: 1 !important;
-    border-color: #bc13fe !important;
-    box-shadow: 0 0 30px rgba(188, 19, 254, 0.5);
-    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-body.music-minimized .sidebar-toolbar [data-app="music"] {
-    transform: scale(0.65) translateZ(-50px) !important;
-    opacity: 0.4 !important;
-    filter: grayscale(0.8) !important;
-    box-shadow: none !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    pointer-events: auto !important;
-}
-
-#map-window:has(#search-wrapper.expanded) #map-controls-bar {
-    transform: translateY(-20px) scale(0.8) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-#search-wrapper.expanded { width: 14rem !important; max-width: 95% !important; }
-#search-wrapper.expanded #map-search-input { width: 8rem !important; min-width: 0 !important; padding-left: 0.6rem; padding-right: 0.6rem; overflow: hidden; text-overflow: ellipsis; }
-#search-wrapper.expanded #btn-map-search, #search-wrapper.expanded #btn-search-clear { opacity: 1 !important; display: flex !important; }
-
-.intel-text-outline {
-    text-shadow: 1px 1px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000, 0 2px 10px rgba(0,0,0,1);
-}
-
-#map-controls-bar { transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-body.app-open .sidebar-toolbar .interactable.active-app:not([data-app="music"]) {
-    transform: scale(1.2) translateZ(100px) !important;
-    opacity: 1 !important;
-    border-color: #00f2ff !important;
-    box-shadow: 0 0 40px rgba(0, 242, 255, 0.6), inset 0 0 20px rgba(0, 242, 255, 0.2);
-    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
+/* Connect CSS Variables to Tailwind elements dynamically */
 .app-icon-size {
     width: var(--app-size) !important;
     height: var(--app-size) !important;
     border-color: var(--app-border-color) !important;
-    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
     transform-style: preserve-3d;
 }
 
-#settings-panel {
-    transform: translate(-50%, -50%) scale(var(--panel-scale));
-    transition: transform 0.5s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.5s ease;
-}
-
-.music-bg, #map-window .glass-panel {
+#settings-panel, .music-bg, #map-window .glass-panel {
     transform: scale(var(--panel-scale));
     transition: transform 0.3s ease-out;
 }
 
-.interactable.hovered { transform: scale(var(--hover-scale)) translateY(-10px) !important; }
-.interactable.clicked { transform: scale(0.9) !important; filter: brightness(1.5); transition: transform 0.1s; }
+.interactable.hovered {
+    transform: scale(var(--hover-scale)) translateY(-10px) !important;
+}
+
+.interactable.clicked {
+    transform: scale(0.9) !important;
+    filter: brightness(1.5);
+    transition: transform 0.1s;
+}
 
 #input_video, #output_canvas {
+    /* Scale X for mirror. We multiply zoom by the mirror-scale */
     transform: scaleX(var(--mirror-scale)) scale(var(--camera-zoom));
     transform-origin: center;
     transition: transform 0.5s ease;
@@ -170,11 +119,14 @@ body.cockpit-mode::after {
     box-shadow: inset 0 0 200px rgba(0,0,0,0.9);
 }
 
+/* Cockpit Center Crosshair */
 body.cockpit-mode::before {
     content: '';
     position: absolute;
-    top: 50%; left: 50%;
-    width: 60px; height: 60px;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
     border: 2px solid rgba(0, 242, 255, 0.3);
     border-radius: 50%;
     transform: translate(-50%, -50%);
@@ -182,91 +134,180 @@ body.cockpit-mode::before {
     pointer-events: none;
 }
 
+/* Spatial Cursor */
 .spatial-cursor {
-    position: absolute; width: var(--cursor-size); height: var(--cursor-size);
-    background: rgba(255, 255, 255, 0.8); border-radius: 50%;
-    pointer-events: none; z-index: 9999; transform: translate(-50%, -50%);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); transition: transform 0.1s;
+    position: absolute;
+    width: var(--cursor-size);
+    height: var(--cursor-size);
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    transition: transform 0.1s;
 }
 
 .spatial-cursor-ring {
-    position: absolute; width: calc(var(--cursor-size) * 3); height: calc(var(--cursor-size) * 3);
-    border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 50%;
-    pointer-events: none; z-index: 9998; transform: translate(-50%, -50%);
+    position: absolute;
+    width: calc(var(--cursor-size) * 3);
+    height: calc(var(--cursor-size) * 3);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
     transition: all 0.15s ease-out;
 }
 
-.spatial-cursor.pinching { transform: translate(-50%, -50%) scale(0.6); background: #00ff88; box-shadow: 0 0 15px #00ff88; }
-.spatial-cursor-ring.pinching { width: calc(var(--cursor-size) * 1.5); height: calc(var(--cursor-size) * 1.5); border-color: #00ff88; }
+.spatial-cursor.pinching {
+    transform: translate(-50%, -50%) scale(0.6);
+    background: #00ff88;
+    box-shadow: 0 0 15px #00ff88;
+}
 
-/* Themes */
-body.tron-legacy { background-color: #00040a; --text-primary: #0ff; --panel-bg: rgba(0, 15, 20, 0.7); }
+.spatial-cursor-ring.pinching {
+    width: calc(var(--cursor-size) * 1.5);
+    height: calc(var(--cursor-size) * 1.5);
+    border-color: #00ff88;
+}
+
+/* ============================
+   TRON Legacy (Blue Black)
+   ============================ */
+body.tron-legacy { 
+    background-color: #00040a; 
+    --text-primary: #0ff;
+    --panel-bg: rgba(0, 15, 20, 0.7);
+}
 body.tron-legacy #input_video, body.tron-legacy #input_video_right { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(140deg) saturate(2); }
 body.tron-legacy .glass-panel { background: var(--panel-bg) !important; border: 1px solid #0ff !important; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1) !important; color: var(--text-primary) !important; }
 
-body.tron-ares-rb { background-color: #0a0000; --text-primary: #ff003c; --panel-bg: rgba(20, 0, 0, 0.7); }
+/* ============================
+   TRON Ares (Red Black)
+   ============================ */
+body.tron-ares-rb { 
+    background-color: #0a0000; 
+    --text-primary: #ff003c;
+    --panel-bg: rgba(20, 0, 0, 0.7);
+}
 body.tron-ares-rb #input_video, body.tron-ares-rb #input_video_right { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(320deg) saturate(3); }
 body.tron-ares-rb .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3), inset 0 0 10px rgba(255, 0, 60, 0.1) !important; color: var(--text-primary) !important; }
 
-body.tron-ares-rw { background-color: #fdfdfd; --text-primary: #ff003c; --panel-bg: rgba(255, 255, 255, 0.8); }
+/* ============================
+   TRON Ares (Red White)
+   ============================ */
+body.tron-ares-rw { 
+    background-color: #fdfdfd; 
+    --text-primary: #ff003c;
+    --panel-bg: rgba(255, 255, 255, 0.8);
+}
 body.tron-ares-rw #input_video, body.tron-ares-rw #input_video_right { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(330deg); }
 body.tron-ares-rw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: var(--text-primary) !important; }
 body.tron-ares-rw .text-white, body.tron-ares-rw span, body.tron-ares-rw h2, body.tron-ares-rw h3 { color: #ff003c !important; }
 
-body.tron-ares-bw { background-color: #f8fafc; --text-primary: #0284c7; --panel-bg: rgba(255, 255, 255, 0.8); }
+/* ============================
+   TRON Ares (Blue White)
+   ============================ */
+body.tron-ares-bw { 
+    background-color: #f8fafc; 
+    --text-primary: #0284c7;
+    --panel-bg: rgba(255, 255, 255, 0.8);
+}
 body.tron-ares-bw #input_video, body.tron-ares-bw #input_video_right { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(200deg); }
 body.tron-ares-bw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #0284c7 !important; box-shadow: 0 0 20px rgba(2, 132, 199, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: var(--text-primary) !important; }
 body.tron-ares-bw .text-white, body.tron-ares-bw span, body.tron-ares-bw h2, body.tron-ares-bw h3 { color: #0284c7 !important; }
 
-.glass-panel { color: inherit; }
-.interactable button, .interactable { color: inherit; }
+.glass-panel {
+    color: inherit;
+}
 
+.interactable button, .interactable {
+    color: inherit;
+}
+
+/* Music Player Minimized State */
 #music-player.minimized .music-bg { background: transparent !important; border: none !important; box-shadow: none !important; backdrop-filter: none !important; padding: 0 !important; }
 #music-player.minimized .music-controls { display: none !important; }
 
-.static-green-dot { display: flex; justify-content: center; align-items: center; filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.5)); }
+/* --- NEON NODES (Static) --- */
+.static-green-dot {
+    display: flex; justify-content: center; align-items: center;
+    filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.5));
+}
 
+/* --- PERMANENT MAP LABELS (DARK MODE) --- */
 .leaflet-tooltip.neon-label {
-    background: rgba(10, 10, 10, 0.85) !important; border: 1px solid #ccff00 !important; color: #ccff00 !important;
-    box-shadow: 0 0 10px rgba(204, 255, 0, 0.3) !important; font-family: 'Syncopate', sans-serif;
-    font-size: 9px !important; letter-spacing: 1px; text-transform: uppercase; border-radius: 4px; padding: 4px 8px; pointer-events: none;
+    background: rgba(10, 10, 10, 0.85) !important;
+    border: 1px solid #ccff00 !important;
+    color: #ccff00 !important;
+    box-shadow: 0 0 10px rgba(204, 255, 0, 0.3) !important;
+    font-family: 'Syncopate', sans-serif;
+    font-size: 9px !important;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 4px 8px;
+    pointer-events: none;
 }
 .leaflet-tooltip-top.neon-label::before { border-top-color: #ccff00 !important; }
 
-.leaflet-popup-content-wrapper { background: #050505 !important; color: #fff !important; border: 1px solid #ccff00 !important; border-radius: 6px !important; box-shadow: 0 0 20px rgba(204, 255, 0, 0.2) !important; }
-.leaflet-popup-tip { background: #050505 !important; border: 1px solid #ccff00 !important; }
-.leaflet-container a.leaflet-popup-close-button { color: #ccff00 !important; }
-
-.popup-btn { display: block; width: 100%; padding: 10px; margin-top: 8px; text-align: center; text-decoration: none; font-family: 'Syncopate'; font-size: 10px; border-radius: 3px; transition: 0.3s; cursor: pointer; border: none; }
-
-body.cardboard-mode { display: flex !important; width: 200vw !important; margin-left: -50vw !important; overflow: hidden; background: #000; }
-body.cardboard-mode::after { content: ''; position: absolute; left: 100vw; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.2); box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); z-index: 9999; }
-.eye-viewport { width: 50vw; height: 100vh; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.eye-viewport.left { transform: translateX(calc(-1 * (var(--ipd-offset) + 20px))) translateY(var(--v-offset)) scale(calc(var(--view-scale) * 0.9)); }
-.eye-viewport.right { transform: translateX(calc(var(--ipd-offset) + 20px)) translateY(var(--v-offset)) scale(calc(var(--view-scale) * 0.9)); }
-
-.orbital-lock-active { border-color: #3b82f6 !important; box-shadow: 0 0 40px rgba(59, 130, 246, 0.6) !important; animation: orbital-pulse 1.5s infinite alternate ease-in-out; cursor: grabbing; }
-
-@keyframes orbital-pulse {
-    from { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
-    to { box-shadow: 0 0 50px rgba(59, 130, 246, 0.8); }
+/* --- LEAFLET POPUP DARK OVERRIDE --- */
+.leaflet-popup-content-wrapper {
+    background: #050505 !important;
+    color: #fff !important;
+    border: 1px solid #ccff00 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 0 20px rgba(204, 255, 0, 0.2) !important;
+}
+.leaflet-popup-tip {
+    background: #050505 !important;
+    border: 1px solid #ccff00 !important;
+}
+.leaflet-container a.leaflet-popup-close-button {
+    color: #ccff00 !important;
 }
 
-/* --- DYNAMIC BUTTON SKINS --- */
-body.skin-ares-rb .interactable, body.skin-ares-rb button.interactable { background: rgba(255, 0, 60, 0.25) !important; border-color: #ff003c !important; color: #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.4) !important; }
-body.skin-ares-blue .interactable, body.skin-ares-blue button.interactable { background: rgba(0, 100, 255, 0.25) !important; border-color: #0064ff !important; color: #0064ff !important; box-shadow: 0 0 20px rgba(0, 100, 255, 0.4) !important; }
-body.skin-ares-rw .interactable, body.skin-ares-rw button.interactable { background: rgba(255, 255, 255, 0.25) !important; border-color: #ff003c !important; color: #ff003c !important; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2) !important; }
-body.skin-legacy .interactable, body.skin-legacy button.interactable { background: rgba(0, 255, 255, 0.25) !important; border-color: #0ff !important; color: #0ff !important; box-shadow: 0 0 20px rgba(0, 255, 255, 0.4) !important; }
+.popup-btn {
+    display: block; width: 100%; padding: 10px; margin-top: 8px;
+    text-align: center; text-decoration: none; font-family: 'Syncopate';
+    font-size: 10px; border-radius: 3px; transition: 0.3s; cursor: pointer; border: none;
+}
 
-/* --- TRON LEGACY GRID VIBE --- */
-body.tron-legacy-grid #system-grid {
-    opacity: 0.7 !important;
-    background-image: 
-        linear-gradient(rgba(0, 255, 255, 0.4) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 255, 0.4) 1px, transparent 1px);
-    background-size: 40px 40px;
-    background-position: center bottom;
-    perspective: 1000px;
-    transform: rotateX(75deg) scale(4);
-    transform-origin: center bottom;
+/* --- CARDBOARD STEREOSCOPIC MODE (Lensless 8cm Optimization) --- */
+body.cardboard-mode {
+    display: flex !important;
+    width: 200vw !important;
+    margin-left: -50vw !important;
+    overflow: hidden;
+    background: #000;
+}
+
+body.cardboard-mode::after {
+    content: '';
+    position: absolute;
+    left: 100vw; top: 0; bottom: 0;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    z-index: 9999;
+}
+
+.eye-viewport {
+    width: 50vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Base transform for lensless 8cm convergence */
+.eye-viewport.left {
+    transform: translateX(calc(-1 * (var(--ipd-offset) + 20px))) translateY(var(--v-offset)) scale(calc(var(--view-scale) * 0.9));
+}
+
+.eye-viewport.right {
+    transform: translateX(calc(var(--ipd-offset) + 20px)) translateY(var(--v-offset)) scale(calc(var(--view-scale) * 0.9));
 }
