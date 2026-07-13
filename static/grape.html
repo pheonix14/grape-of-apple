@@ -1028,12 +1028,13 @@
 
         <!-- Virtual Keyboard Overlay -->
         <div id="keyboard-overlay"
-            class="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-2 p-4 glass-panel rounded-[32px] w-[98vw] transition-all duration-300">
-            <div class="flex justify-between items-center mb-2">
-                <h2 class="text-xs font-bold opacity-50 uppercase tracking-widest">Input Deck</h2>
+            class="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-auto hidden flex flex-col gap-1.5 p-3 rounded-2xl w-[96vw] transition-all duration-300"
+            style="background: rgba(10,12,20,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="flex justify-between items-center mb-1">
+                <h2 class="text-[9px] font-bold opacity-40 uppercase tracking-widest">Input Deck</h2>
                 <button id="btn-keyboard-close"
-                    class="interactable bg-red-500/20 hover:bg-red-500/40 w-12 h-12 rounded-full flex items-center justify-center border border-red-500/50 text-red-500">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="interactable bg-red-500/20 hover:bg-red-500/40 w-7 h-7 rounded-full flex items-center justify-center border border-red-500/50 text-red-500">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                         </path>
                     </svg>
@@ -1042,37 +1043,37 @@
 
             <!-- Input Display -->
             <div id="keyboard-display"
-                class="bg-white/10 px-8 py-2 rounded-2xl text-lg tracking-widest border border-white/20 min-h-[40px] flex items-center font-bold">
+                class="bg-white/10 px-4 py-1.5 rounded-xl text-sm tracking-widest border border-white/15 min-h-[32px] flex items-center font-bold">
             </div>
 
             <!-- Keys -->
-            <div id="keyboard-keys" class="grid grid-cols-10 gap-2 mt-2">
+            <div id="keyboard-keys" class="grid grid-cols-10 gap-1 mt-1">
                 <!-- Keys injected by JS -->
             </div>
 
             <!-- Bottom Row -->
-            <div class="flex gap-2 mt-4">
-                <button class="interactable flex-1 bg-white/10 py-4 rounded-xl font-bold text-sm"
+            <div class="flex gap-1 mt-1">
+                <button class="interactable flex-1 bg-white/10 py-2 rounded-lg font-bold text-[10px]"
                     data-key="switch-123">123</button>
-                <button class="interactable flex-1 bg-white/10 py-4 rounded-xl font-bold text-sm"
+                <button class="interactable flex-1 bg-white/10 py-2 rounded-lg font-bold text-[10px]"
                     data-key="switch-sym">#+=</button>
                 <button id="btn-keyboard-mic"
-                    class="interactable flex-1 bg-blue-500/20 py-4 rounded-xl text-blue-400 flex items-center justify-center border border-blue-500/40">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="interactable flex-1 bg-blue-500/20 py-2 rounded-lg text-blue-400 flex items-center justify-center border border-blue-500/40">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
                         </path>
                     </svg>
                 </button>
-                <button class="interactable flex-[5] bg-white/10 py-4 rounded-xl text-sm font-bold"
+                <button class="interactable flex-[5] bg-white/10 py-2 rounded-lg text-[10px] font-bold"
                     data-key=" ">SPACE</button>
-                <button class="interactable flex-1 bg-red-500/20 py-4 rounded-xl text-red-500 text-lg font-bold"
+                <button class="interactable flex-1 bg-red-500/20 py-2 rounded-lg text-red-500 text-sm font-bold"
                     data-key="backspace">⌫</button>
-                <button class="interactable flex-1 bg-blue-500/20 py-4 rounded-xl text-blue-500 text-sm font-bold"
+                <button class="interactable flex-1 bg-blue-500/20 py-2 rounded-lg text-blue-500 text-[10px] font-bold"
                     data-key="enter">GO</button>
-                <button id="btn-keyboard-close"
-                    class="interactable flex-1 bg-red-600/20 py-4 rounded-xl text-red-400 flex items-center justify-center border border-red-500/40">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="btn-keyboard-close-2"
+                    class="interactable flex-1 bg-red-600/20 py-2 rounded-lg text-red-400 flex items-center justify-center border border-red-500/40">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                         </path>
                     </svg>

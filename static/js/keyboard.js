@@ -16,10 +16,12 @@ export class VirtualKeyboard {
 
         this.bindEvents();
         
-        // Close buttons
+        // Close buttons (both header and bottom row)
         const closeBtn = document.getElementById('btn-keyboard-close');
         if (closeBtn) closeBtn.addEventListener('click', () => this.close());
-    }
+        const closeBtn2 = document.getElementById('btn-keyboard-close-2');
+        if (closeBtn2) closeBtn2.addEventListener('click', () => this.close());
+    }
 
     bindEvents() {
         this.overlay.addEventListener('click', (e) => {
@@ -80,7 +82,7 @@ export class VirtualKeyboard {
         const set = this.layouts[this.currentSet];
         set.forEach(key => {
             const btn = document.createElement('button');
-            btn.className = 'interactable bg-white/10 py-4 rounded-xl hover:bg-white/20 font-bold text-xl uppercase';
+            btn.className = 'interactable bg-white/10 py-2 rounded-lg hover:bg-white/20 font-bold text-sm uppercase';
             btn.innerText = key;
             btn.setAttribute('data-key', key);
             this.keysContainer.appendChild(btn);
