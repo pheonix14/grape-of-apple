@@ -326,7 +326,7 @@ export class SettingsController {
         
         if (privacyBtn && privacyDot) {
             privacyBtn.classList.toggle('bg-blue-500/30', this.isPrivacyMode);
-            privacyDot.style.left = this.isPrivacyMode ? 'calc(100% - 16px)' : '4px';
+            privacyDot.style.left = this.isPrivacyMode ? 'calc(100% - 20px)' : '4px';
             privacyDot.classList.toggle('bg-blue-400', this.isPrivacyMode);
             privacyDot.classList.toggle('shadow-[0_0_10px_#60a5fa]', this.isPrivacyMode);
         }

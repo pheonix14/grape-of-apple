@@ -200,22 +200,22 @@ body.cockpit-mode::before {
 .spatial-cursor-ring.pinching { width: calc(var(--cursor-size) * 1.5); height: calc(var(--cursor-size) * 1.5); border-color: #00ff88; }
 
 /* Themes */
-body.tron-legacy { background-color: #00040a; --text-primary: #0ff; --panel-bg: rgba(0, 15, 20, 0.7); }
+body.tron-legacy { background-color: #00040a; --text-primary: #0ff; --panel-bg: rgba(0, 15, 20, 0.35); }
 body.tron-legacy #input_video, body.tron-legacy #input_video_right { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(140deg) saturate(2); }
 body.tron-legacy .glass-panel { background: var(--panel-bg) !important; border: 1px solid #0ff !important; box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1) !important; color: var(--text-primary) !important; }
 
-body.tron-ares-rb { background-color: #0a0000; --text-primary: #ff003c; --panel-bg: rgba(20, 0, 0, 0.7); }
+body.tron-ares-rb { background-color: #0a0000; --text-primary: #ff003c; --panel-bg: rgba(20, 0, 0, 0.35); }
 body.tron-ares-rb #input_video, body.tron-ares-rb #input_video_right { filter: brightness(0.4) contrast(1.2) sepia(1) hue-rotate(320deg) saturate(3); }
 body.tron-ares-rb .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.3), inset 0 0 10px rgba(255, 0, 60, 0.1) !important; color: var(--text-primary) !important; }
 
-body.tron-ares-rw { background-color: #fdfdfd; --text-primary: #ff003c; --panel-bg: rgba(255, 255, 255, 0.8); }
+body.tron-ares-rw { background-color: #fdfdfd; --text-primary: #ff003c; --panel-bg: rgba(255, 255, 255, 0.35); }
 body.tron-ares-rw #input_video, body.tron-ares-rw #input_video_right { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(330deg); }
-body.tron-ares-rw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: var(--text-primary) !important; }
+body.tron-ares-rw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #ff003c !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.4) !important; color: var(--text-primary) !important; }
 body.tron-ares-rw .text-white, body.tron-ares-rw span, body.tron-ares-rw h2, body.tron-ares-rw h3 { color: #ff003c !important; }
 
-body.tron-ares-bw { background-color: #f8fafc; --text-primary: #0284c7; --panel-bg: rgba(255, 255, 255, 0.8); }
+body.tron-ares-bw { background-color: #f8fafc; --text-primary: #0284c7; --panel-bg: rgba(255, 255, 255, 0.35); }
 body.tron-ares-bw #input_video, body.tron-ares-bw #input_video_right { filter: brightness(0.8) contrast(1.1) saturate(1.2) hue-rotate(200deg); }
-body.tron-ares-bw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #0284c7 !important; box-shadow: 0 0 20px rgba(2, 132, 199, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.8) !important; color: var(--text-primary) !important; }
+body.tron-ares-bw .glass-panel { background: var(--panel-bg) !important; border: 1px solid #0284c7 !important; box-shadow: 0 0 20px rgba(2, 132, 199, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.4) !important; color: var(--text-primary) !important; }
 body.tron-ares-bw .text-white, body.tron-ares-bw span, body.tron-ares-bw h2, body.tron-ares-bw h3 { color: #0284c7 !important; }
 
 .glass-panel { color: inherit; }
