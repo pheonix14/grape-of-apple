@@ -70,15 +70,21 @@ export class UIController {
         this.applyPanelTilt(x, y);
     }
 
-    setPinching(pinching) {
+    setPinching(pinching, isSynthetic = true) {
         if (pinching && !this.isPinching) {
             this.isPinching = true;
             this.cursor.classList.add('pinching');
             this.cursorRing.classList.add('pinching');
+            if (this.cursorRight) {
+                this.cursorRight.classList.add('pinching');
+                this.cursorRingRight.classList.add('pinching');
+            }
             
             const now = Date.now();
             if (now - this.lastPinchTime > 300) {
-                this.dispatchSpatialClick();
+                if (isSynthetic) {
+                    this.dispatchSpatialClick();
+                }
                 this.lastPinchTime = now;
             }
         } else if (!pinching && this.isPinching) {

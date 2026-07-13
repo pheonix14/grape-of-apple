@@ -132,8 +132,33 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsBtn.addEventListener('click', () => persistence.trackAppOpen('settings'));
     }
 
+    // Global gesture dispatcher
+    let lastHandActiveTime = 0;
+
+    const dispatchGesture = (screenX, screenY, isPinching, isSynthetic = true) => {
+        ui.updateCursor(screenX, screenY);
+        ui.setPinching(isPinching, isSynthetic);
+
+        const gestureData = {
+            x: screenX,
+            y: screenY,
+            isPinching: isPinching,
+            pinchDistance: isPinching ? 0.01 : 1.0
+        };
+
+        // Pass hand state to controllers ONLY if initialized
+        if (map) map.handleHandGesture(gestureData);
+        if (music) music.handleHandGesture(gestureData);
+        if (travelReports) travelReports.handleHandGesture(gestureData);
+        if (auth) auth.handleHandGesture(gestureData);
+        if (compass) compass.handleHandGesture(gestureData);
+        pages.handleHandGesture(gestureData);
+    };
+
     // Initialize Hand Tracker with callback
     const tracker = new HandTracker(videoElement, (hand) => {
+        lastHandActiveTime = Date.now();
+
         const indexTip = hand[8];
         const thumbTip = hand[4];
 
@@ -145,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const screenY = indexTip.y * window.innerHeight;
-        ui.updateCursor(screenX, screenY);
 
         const dx = indexTip.x - thumbTip.x;
         const dy = indexTip.y - thumbTip.y;
@@ -154,23 +178,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const PINCH_THRESHOLD = 0.08; 
         const isPinching = distance < PINCH_THRESHOLD;
-        ui.setPinching(isPinching);
 
-        const gestureData = {
-            x: screenX,
-            y: screenY,
-            isPinching: isPinching,
-            pinchDistance: distance
-        };
-
-        // Pass hand state to controllers ONLY if initialized
-        if (map) map.handleHandGesture(gestureData);
-        if (music) music.handleHandGesture(gestureData);
-        if (travelReports) travelReports.handleHandGesture(gestureData);
-        if (auth) auth.handleHandGesture(gestureData);
-        if (compass) compass.handleHandGesture(gestureData);
-        pages.handleHandGesture(gestureData);
+        dispatchGesture(screenX, screenY, isPinching, true);
     });
 
     tracker.start();
+
+    // Mouse & Touch fallback listeners (only active when hand tracking is inactive)
+    let isMouseDown = false;
+
+    const handleMouseEvent = (e, isPinching) => {
+        if (Date.now() - lastHandActiveTime < 1000) return; // Hand tracker has priority
+        dispatchGesture(e.clientX, e.clientY, isPinching, false);
+    };
+
+    window.addEventListener('mousemove', (e) => {
+        handleMouseEvent(e, isMouseDown);
+    }, { passive: true });
+
+    window.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        handleMouseEvent(e, true);
+    });
+
+    window.addEventListener('mouseup', (e) => {
+        isMouseDown = false;
+        handleMouseEvent(e, false);
+    });
+
+    // Touch support (mobile/tablet equivalent)
+    const handleTouchEvent = (e, isPinching) => {
+        if (Date.now() - lastHandActiveTime < 1000) return; // Hand tracker has priority
+        if (e.touches && e.touches.length > 0) {
+            const touch = e.touches[0];
+            dispatchGesture(touch.clientX, touch.clientY, isPinching, false);
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            const touch = e.changedTouches[0];
+            dispatchGesture(touch.clientX, touch.clientY, isPinching, false);
+        }
+    };
+
+    window.addEventListener('touchstart', (e) => {
+        handleTouchEvent(e, true);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        handleTouchEvent(e, true);
+    }, { passive: true });
+
+    window.addEventListener('touchend', (e) => {
+        handleTouchEvent(e, false);
+    }, { passive: true });
 });
