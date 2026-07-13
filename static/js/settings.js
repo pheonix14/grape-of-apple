@@ -282,14 +282,20 @@ export class SettingsController {
         this.setAppOpen(this.isOpen, 'settings');
         if (this.isOpen) {
             this.panel.classList.remove('hidden');
+            this.panel.style.transform = 'translateY(100%)';
             setTimeout(() => {
                 this.panel.classList.remove('opacity-0', 'pointer-events-none');
                 this.panel.classList.add('opacity-100', 'pointer-events-auto');
+                this.panel.style.transform = 'translateY(0)';
             }, 10);
         } else {
+            this.panel.style.transform = 'translateY(100%)';
             this.panel.classList.remove('opacity-100', 'pointer-events-auto');
             this.panel.classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => this.panel.classList.add('hidden'), 500);
+            setTimeout(() => {
+                this.panel.classList.add('hidden');
+                this.panel.style.transform = '';
+            }, 400);
         }
     }
 
