@@ -31,8 +31,12 @@ export class CompassController {
             this.minHUD.addEventListener('click', () => this.restore());
         }
 
-        // Start listening to orientation (Works in background once browser allows)
-        window.addEventListener('deviceorientation', (e) => this.handleOrientation(e), true);
+        // Start listening to orientation
+        if ('ondeviceorientationabsolute' in window) {
+            window.addEventListener('deviceorientationabsolute', (e) => this.handleOrientation(e), true);
+        } else {
+            window.addEventListener('deviceorientation', (e) => this.handleOrientation(e), true);
+        }
         
         // Mobile Permission Request
         this.panel.addEventListener('click', () => {
@@ -127,5 +131,10 @@ export class CompassController {
         this.minHUD.classList.add('hidden');
         this.isOpen = false;
         this.isMinimized = false;
+    }
+
+    handleHandGesture(gesture) {
+        if (!this.isOpen && !this.isMinimized) return;
+        // Interaction logic can be added here
     }
 }

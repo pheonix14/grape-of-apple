@@ -1,3 +1,5 @@
+import { CONFIG } from './config.js';
+
 export class RewardEngine {
     constructor(persistence) {
         this.persistence = persistence;
@@ -5,14 +7,20 @@ export class RewardEngine {
         this.notificationHub = document.getElementById('notification-hub');
         this.goldHUD = document.getElementById('gold-hud');
         
+        // Initialize Supabase
+        this.supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+        
         this.lastCheck = 0;
         this.checkInterval = 30000; // 30 seconds
+        this.isSubscribed = false;
+        this.channel = null;
         this.init();
     }
 
     init() {
         // Initial balance update
         this.updateLiveBalance();
+        this.setupRealtimeSync();
         
         // Listen for page changes to hide/show Gold HUD (NOW PAGE 3 ONLY)
         document.addEventListener('pageChanged', (e) => {
@@ -28,6 +36,44 @@ export class RewardEngine {
                 }
             }
         });
+    }
+
+    setupRealtimeSync() {
+        const savedUser = localStorage.getItem('grape_os_user');
+        if (!savedUser || this.isSubscribed) return;
+        const user = JSON.parse(savedUser);
+
+        // Subscribe to changes on users table for this specific user
+        this.channel = this.supabase
+            .channel(`public:users:${user.user_id}`)
+            .on('postgres_changes', { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'users',
+                filter: `user_id=eq.${user.user_id}`
+            }, (payload) => {
+                if (payload.new && payload.new.points !== undefined) {
+                    this.updateUI(payload.new.points);
+                }
+            })
+            .subscribe();
+            
+        this.isSubscribed = true;
+    }
+
+    reset() {
+        if (this.channel) {
+            this.supabase.removeChannel(this.channel);
+            this.channel = null;
+        }
+        this.isSubscribed = false;
+        this.updateUI(0);
+    }
+
+    updateUI(points) {
+        if (this.goldBalance) {
+            this.goldBalance.innerText = String(points).padStart(4, '0');
+        }
     }
 
     playStarAnimation() {
@@ -63,9 +109,12 @@ export class RewardEngine {
             const result = await response.json();
             
             if (result.status === 'ok') {
-                this.goldBalance.innerText = String(result.points).padStart(4, '0');
+                this.updateUI(result.points);
                 user.points = result.points;
                 localStorage.setItem('grape_os_user', JSON.stringify(user));
+                
+                // Re-setup sync if needed (e.g. after login)
+                this.setupRealtimeSync();
             }
         } catch (e) {
             console.error("Gold Sync Error:", e);
@@ -94,35 +143,64 @@ export class RewardEngine {
             });
 
             const result = await response.json();
-            if (result.status === 'ok' && result.triggered && result.triggered.length > 0) {
-                this.playStarAnimation();
-                result.triggered.forEach(t => {
-                    this.showNotification(t);
-                });
-                this.updateLiveBalance();
+            if (result.status === 'ok') {
+                // 1. Handle Rewards (11km)
+                if (result.triggered && result.triggered.length > 0) {
+                    this.playStarAnimation();
+                    result.triggered.forEach(t => {
+                        this.showNotification(t, 'REWARD');
+                    });
+                    this.updateLiveBalance();
+                }
+                
+                // 2. Handle Nearby Alerts (100km)
+                if (result.nearby && result.nearby.length > 0) {
+                    result.nearby.forEach(n => {
+                        this.showNotification(n, 'NEARBY');
+                    });
+                }
             }
         } catch (e) {
             console.error("Proximity Check Failed:", e);
         }
     }
 
-    showNotification(data) {
+    showNotification(data, type = 'REWARD') {
         if (!this.notificationHub) return;
 
         const notif = document.createElement('div');
-        notif.className = "glass-panel p-4 rounded-2xl border border-yellow-500/40 bg-yellow-500/10 shadow-[0_0_30px_rgba(234,179,8,0.2)] flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500 pointer-events-auto";
-        notif.innerHTML = `
-            <div class="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center shadow-[0_0_15px_#eab308]">
-                <svg class="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"></path>
-                </svg>
-            </div>
-            <div class="flex flex-col">
-                <span class="text-[10px] font-black text-yellow-500 uppercase tracking-widest">Sector Reward Detected</span>
-                <span class="text-xs font-bold text-white uppercase">${data.name}</span>
-                <span class="text-[9px] text-green-400 font-bold tracking-widest">+${data.reward} GOLD COINS ARCHIVED</span>
-            </div>
-        `;
+        
+        if (type === 'REWARD') {
+            notif.className = "glass-panel p-4 rounded-2xl border border-yellow-500/40 bg-yellow-500/10 shadow-[0_0_30px_rgba(234,179,8,0.2)] flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500 pointer-events-auto";
+            notif.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center shadow-[0_0_15px_#eab308]">
+                    <svg class="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"></path>
+                    </svg>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-black text-yellow-500 uppercase tracking-widest">Sector Reward Detected</span>
+                    <span class="text-xs font-bold text-white uppercase">${data.name}</span>
+                    <span class="text-[9px] text-green-400 font-bold tracking-widest">+${data.reward} GOLD COINS ARCHIVED</span>
+                </div>
+            `;
+        } else {
+            // NEARBY Detection (100km)
+            notif.className = "glass-panel p-4 rounded-2xl border border-blue-500/40 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.1)] flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500 pointer-events-auto";
+            notif.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/40">
+                    <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Nearby Sector Identified</span>
+                    <span class="text-xs font-bold text-white uppercase">${data.name}</span>
+                    <span class="text-[9px] text-blue-300/60 font-bold tracking-widest">CATEGORY: ${data.category.toUpperCase()} | DIST: ${data.dist}KM</span>
+                </div>
+            `;
+        }
 
         this.notificationHub.appendChild(notif);
 

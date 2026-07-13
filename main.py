@@ -20,8 +20,12 @@ os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
-async def read_index():
-    return FileResponse("static/index.html")
+async def read_home():
+    return FileResponse("static/home.html")
+
+@app.get("/grape")
+async def read_grape():
+    return FileResponse("static/grape.html")
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371
@@ -34,13 +38,20 @@ def haversine(lat1, lon1, lat2, lon2):
 @app.post("/api/auth/login")
 async def login(data: dict = Body(...)):
     user_id = data.get("user_id")
-    password = data.get("password") # Expecting SHA256 from client or hashed here
+    password = data.get("password")
     
-    if not supabase: return {"status": "error", "message": "Backend Offline"}
+    print(f"[AUTH] LOGIN ATTEMPT: {user_id}")
+    
+    if not supabase: 
+        print("[AUTH] FAILED: SUPABASE OFFLINE")
+        return {"status": "error", "message": "Backend Offline"}
 
     res = supabase.table("users").select("*").eq("user_id", user_id).eq("password", password).execute()
     if res.data and len(res.data) > 0:
+        print(f"[AUTH] SUCCESS: {user_id} LINKED")
         return {"status": "ok", "user": res.data[0]}
+    
+    print(f"[AUTH] DENIED: INVALID CREDENTIALS FOR {user_id}")
     return {"status": "error", "message": "Access Denied"}
 
 @app.post("/api/auth/signup")
@@ -48,11 +59,16 @@ async def signup(data: dict = Body(...)):
     user_id = data.get("user_id")
     password = data.get("password")
     
-    if not supabase: return {"status": "error", "message": "Backend Offline"}
+    print(f"[AUTH] SIGNUP REQUEST: {user_id}")
+    
+    if not supabase: 
+        print("[AUTH] FAILED: SUPABASE OFFLINE")
+        return {"status": "error", "message": "Backend Offline"}
 
     # Check if exists
     existing = supabase.table("users").select("user_id").eq("user_id", user_id).execute()
     if existing.data:
+        print(f"[AUTH] SIGNUP DENIED: {user_id} ALREADY EXISTS")
         return {"status": "error", "message": "ID Already Archived"}
 
     new_user = {
@@ -66,7 +82,10 @@ async def signup(data: dict = Body(...)):
     
     res = supabase.table("users").insert(new_user).execute()
     if res.data:
+        print(f"[AUTH] SUCCESS: {user_id} IDENTITY ARCHIVED")
         return {"status": "ok", "user": res.data[0]}
+    
+    print(f"[AUTH] FAILED: COULD NOT INSERT {user_id}")
     return {"status": "error", "message": "Archiving Failed"}
 
 @app.get("/api/user/points/{user_id}")
@@ -107,13 +126,26 @@ async def check_proximity(data: dict = Body(...)):
     if not user_id or u_lat is None or u_lon is None or not supabase:
         return {"status": "error", "message": "Invalid telemetry data"}
 
+    print(f"[PROXIMITY] SCANNING FOR {user_id} @ {u_lat}, {u_lon}")
+    
     res = supabase.table("locations").select("*").execute()
     locations = res.data
     triggered = []
+    nearby = []
     
     for loc in locations:
         dist = haversine(u_lat, u_lon, loc['lat'], loc['lon'])
-        if dist <= 40:
+        
+        # 100km Nearby Detection
+        if dist <= 100:
+            nearby.append({
+                "name": loc['name'],
+                "category": loc.get('category', 'POINT OF INTEREST'),
+                "dist": round(dist, 2)
+            })
+        
+        # 11km Reward Trigger
+        if dist <= 11:
             history = supabase.table("transactions").select("*")\
                 .eq("user_id", user_id)\
                 .eq("category", "REWARD_PROXIMITY")\
@@ -124,19 +156,21 @@ async def check_proximity(data: dict = Body(...)):
                 reward = loc.get('reward_per_visit', 100)
                 txn_id = f"TXN-{uuid.uuid4().hex[:8].upper()}"
                 
+                print(f"[PROXIMITY] REWARD UNLOCKED: {user_id} @ {loc['name']} (+{reward})")
+                
                 supabase.table("transactions").insert({
                     "txn_id": txn_id, "user_id": user_id, "amount": reward,
                     "category": "REWARD_PROXIMITY", "details": f"Proximity Reward: {loc['name']}"
                 }).execute()
                 
-                # Fetch fresh points to avoid race conditions
+                # Update user points
                 user_res = supabase.table("users").select("points").eq("user_id", user_id).single().execute()
                 new_points = user_res.data['points'] + reward
                 supabase.table("users").update({"points": new_points}).eq("user_id", user_id).execute()
                 
                 triggered.append({"name": loc['name'], "reward": reward, "dist": round(dist, 2)})
 
-    return {"status": "ok", "triggered": triggered}
+    return {"status": "ok", "triggered": triggered, "nearby": nearby}
 
 @app.get("/api/media")
 async def list_media():

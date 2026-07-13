@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const initMic = () => {
         if (!mic) {
-            console.log('[SYSTEM] INITIALIZING TACTICAL ASSISTANT...');
+            console.log('[SYSTEM] INITIALIZING ASSISTANT...');
             // Ensure map is available for location commands
             const mapInstance = initMap();
             // We pass travelReports function so mic can lazy-init it if needed
@@ -80,10 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return travelReports;
     };
 
-    const initCompass = () => {
+    window.initCompass = () => {
         if (!compass) {
             console.log('[SYSTEM] LAZY LOADING COMPASS...');
             compass = new CompassController();
+            window.compassController = compass;
             persistence.trackAppOpen('compass');
         }
         compass.open();
@@ -112,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (app === 'map') initMap();
             if (app === 'music') initMusic();
             if (app === 'travel-reports') initTravelReports();
-            if (app === 'compass') initCompass();
+            if (app === 'compass') window.initCompass();
             if (app === 'auth') initAuth();
         });
     });
@@ -167,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (music) music.handleHandGesture(gestureData);
         if (travelReports) travelReports.handleHandGesture(gestureData);
         if (auth) auth.handleHandGesture(gestureData);
+        if (compass) compass.handleHandGesture(gestureData);
         pages.handleHandGesture(gestureData);
     });
 

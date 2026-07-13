@@ -1,7 +1,7 @@
 export class PageController {
     constructor() {
         this.currentPage = 1;
-        this.totalPages = 3;
+        this.totalPages = 4;
         this.pinchStartX = 0;
         this.isDraggingPage = false;
         this.dragThreshold = 150; // pixels
@@ -19,6 +19,12 @@ export class PageController {
     }
 
     handleHandGesture(data) {
+        // Block page switching if any app (except music) is open
+        if (document.body.classList.contains('app-open')) {
+            this.isDraggingPage = false;
+            return;
+        }
+
         if (data.isPinching) {
             if (!this.isDraggingPage) {
                 // Check if starting on empty space
@@ -53,7 +59,7 @@ export class PageController {
         this.addLog(`SWITCHING TO PAGE ${page}`, 'INFO');
         this.updatePageUI();
 
-        // Dispatch tactical event for other controllers
+        // Dispatch event for other controllers
         const event = new CustomEvent('pageChanged', { detail: { page: page } });
         document.dispatchEvent(event);
     }

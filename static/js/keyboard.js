@@ -20,8 +20,6 @@ export class VirtualKeyboard {
         const closeBtn = document.getElementById('btn-keyboard-close');
         if (closeBtn) closeBtn.addEventListener('click', () => this.close());
 
-        const tacticalCloseBtn = document.getElementById('btn-keyboard-tactical-close');
-        if (tacticalCloseBtn) tacticalCloseBtn.addEventListener('click', () => this.close());
     }
 
     bindEvents() {

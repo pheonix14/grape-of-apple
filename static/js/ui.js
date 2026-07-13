@@ -135,8 +135,8 @@ export class UIController {
         const centerY = window.innerHeight / 2;
 
         panels.forEach(panel => {
-            // Only tilt if it's a primary panel (Settings, Music, Map)
-            if (panel.id === 'settings-panel' || panel.classList.contains('music-bg') || panel.parentElement.id === 'map-window') {
+            // Only tilt if it's a primary panel (Settings, Music, Map, Compass)
+            if (panel.id === 'settings-panel' || panel.id === 'compass-panel' || panel.classList.contains('music-bg') || panel.parentElement.id === 'map-window') {
                 const rect = panel.getBoundingClientRect();
                 
                 // Calculate tilt based on distance from hand to panel center
@@ -152,10 +152,10 @@ export class UIController {
                 // Combine with existing scale from CSS
                 const scale = getComputedStyle(document.documentElement).getPropertyValue('--panel-scale') || 1;
                 
-                // Special case for sidebar centering
+                // Special case for centered panels
                 let transform = `perspective(1200px) scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
                 
-                if (panel.id === 'settings-panel') {
+                if (panel.id === 'settings-panel' || panel.id === 'compass-panel') {
                      // Keep its absolute centering (X and Y)
                      panel.style.transform = `translate(-50%, -50%) ${transform}`;
                 } else {

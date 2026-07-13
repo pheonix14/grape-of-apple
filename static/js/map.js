@@ -20,13 +20,13 @@ export class MapController {
         this.routeList = document.getElementById('route-list');
         this.searchResultsPanel = document.getElementById('map-search-results');
         
-        // Neural Slider Logic
+        // Tactical Slider Logic
         this.scrollHandle = document.getElementById('search-scroll-handle');
         this.scrollTrack = document.getElementById('search-scroll-track');
         this.isDraggingScroll = false;
         
         // Intel Panel
-        this.intelPanel = document.getElementById('tactical-intel');
+        this.intelPanel = document.getElementById('intel-panel');
         this.intelName = document.getElementById('intel-name');
         this.intelCategory = document.getElementById('intel-category');
         this.intelStories = document.getElementById('intel-stories');
@@ -77,7 +77,7 @@ export class MapController {
         
         this.destinationMarker = L.marker([lat, lng], {
             icon: L.divIcon({
-                className: 'tactical-marker-dest',
+                className: 'marker-dest',
                 html: '<div class="w-8 h-8 bg-blue-600 rounded-full border-4 border-white shadow-2xl animate-pulse"></div>',
                 iconSize: [32, 32]
             })
@@ -98,7 +98,7 @@ export class MapController {
             }
 
             if (id) {
-                this.loadTacticalIntel(id, name, category, lat, lng);
+                this.loadIntel(id, name, category, lat, lng);
                 
                 // SPECIAL RULE: In minimap mode, only auto-open if user used voice
                 if (this.isMinimized) {
@@ -350,7 +350,10 @@ export class MapController {
     }
 
     initMap() {
-        this.map = L.map('map-container', { zoomControl: false }).setView(this.userLocation, 13);
+        this.map = L.map('map-container', { 
+            zoomControl: false,
+            doubleClickZoom: false
+        }).setView(this.userLocation, 13);
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; CartoDB',
@@ -372,6 +375,15 @@ export class MapController {
                 this.isPlacementMode = false;
                 this.btnMarker.classList.remove('bg-red-500/60');
                 document.getElementById('map-crosshair').classList.remove('active');
+            }
+        });
+
+        // Double Click to Maximize or Zoom In
+        this.map.on('dblclick', (e) => {
+            if (this.isMinimized) {
+                this.toggleMinimize();
+            } else {
+                this.map.setZoom(this.map.getZoom() + 1);
             }
         });
 
@@ -435,7 +447,7 @@ export class MapController {
             }
 
             if (locations) {
-                console.log(`Neural Link established: ${locations.length} sectors detected.`);
+                console.log(`Tactical Link established: ${locations.length} sectors detected.`);
                 
                 // STATIC GREEN DOT ICON (High Visibility, Upscaled for Pointer)
                 const huntIcon = L.divIcon({
@@ -491,7 +503,7 @@ export class MapController {
                 
                 this.updateMarkers(); // Initial placement and scaling
             }
-        } catch (e) { console.error("Neural loading failure:", e); }
+        } catch (e) { console.error("Tactical loading failure:", e); }
     }
 
     updateMarkers() {
@@ -675,6 +687,12 @@ export class MapController {
                 this.intelPanel.style.top = "1.5rem";
                 this.intelPanel.style.maxHeight = "calc(100vh - 150px)";
             }
+            
+            // Auto-show compass when minimap is used
+            if (window.initCompass) {
+                const compass = window.initCompass();
+                compass.minimize(); // Show HUD next to map
+            }
         } else {
             // Restore to Full Cockpit State
             this.window.style.width = "100%";
@@ -742,11 +760,29 @@ export class MapController {
             this.btnMinimize.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>';
             
             if (this.btnClose) this.btnClose.style.display = "flex";
+            
+            // Auto-hide compass when map is restored
+            if (window.compassController) {
+                window.compassController.close();
+            }
         }
-        setTimeout(() => this.map.invalidateSize(), 600);
+        
+        // Continuously update size during the 500ms CSS transition
+        // This prevents drag and pinch interactions from glitching out
+        let frames = 0;
+        const resizeLoop = () => {
+            if (this.map) this.map.invalidateSize({ pan: false });
+            frames++;
+            if (frames < 35) {
+                requestAnimationFrame(resizeLoop);
+            }
+        };
+        requestAnimationFrame(resizeLoop);
+
+        setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 600);
     }
 
-    async loadTacticalIntel(locId, name, category, lat, lon) {
+    async loadIntel(locId, name, category, lat, lon) {
         this.currentIntelLoc = { id: locId, name, category, lat, lon };
         this.intelPanel.classList.remove('hidden');
         this.intelName.innerText = name;
@@ -884,7 +920,7 @@ export class MapController {
         } catch (e) { console.error("Sync Failed:", e); }
     }
 
-    async searchMultipleLocations(query) {
+    async searchIntel(query) {
         if (!query || query.length < 1) return [];
         try {
             // 1. High-Performance Substring Fetch
@@ -897,7 +933,7 @@ export class MapController {
             if (error) throw error;
             if (!candidates) return [];
 
-            // 2. Neural Similarity Analysis (90% high-fidelity focus)
+            // 2. Tactical Similarity Analysis (90% high-fidelity focus)
             const scoredMatches = candidates.map(loc => {
                 const name = (loc.name || "").toLowerCase();
                 const q = query.toLowerCase();
@@ -920,7 +956,7 @@ export class MapController {
                 .slice(0, 10);
 
         } catch (e) {
-            console.error("Neural Search Engine failure:", e);
+            console.error("Search Engine failure:", e);
             // Emergency Fallback
             const { data } = await this.supabase.from('locations').select('*').limit(5).ilike('name', `%${query}%`);
             return data || [];
@@ -1020,7 +1056,7 @@ export class MapController {
             }
         }
 
-        // --- NEURAL SLIDER DRAG LOGIC ---
+        // --- SLIDER DRAG LOGIC ---
         if (hand.isPinching) {
             // Intel Panel Scroll Logic
             if (!this.isDraggingIntelScroll && this.intelScrollTrack) {

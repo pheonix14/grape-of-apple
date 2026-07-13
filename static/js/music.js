@@ -258,7 +258,7 @@ export class MusicPlayer {
     }
 
     async loadDefaultLibrary() {
-        this.mediaList.innerHTML = '<div class="text-[8px] opacity-30 uppercase tracking-[0.2em] px-2 py-4 font-bold animate-pulse text-center">Syncing Tactical Files...</div>';
+        this.mediaList.innerHTML = '<div class="text-[8px] opacity-30 uppercase tracking-[0.2em] px-2 py-4 font-bold animate-pulse text-center">Syncing Files...</div>';
         try {
             const response = await fetch(`/api/media?t=${Date.now()}`);
             if (!response.ok) throw new Error('Network response was not ok');
@@ -267,7 +267,7 @@ export class MusicPlayer {
             if (tracks && tracks.length > 0) {
                 this.renderMediaList(tracks);
             } else {
-                this.mediaList.innerHTML = '<div class="text-[8px] opacity-30 uppercase tracking-[0.2em] px-2 py-4 font-bold text-center">No Tactical Files Found</div>';
+                this.mediaList.innerHTML = '<div class="text-[8px] opacity-30 uppercase tracking-[0.2em] px-2 py-4 font-bold text-center">No Files Found</div>';
             }
         } catch (error) {
             console.error("❌ Failed to fetch media library:", error);
@@ -278,7 +278,7 @@ export class MusicPlayer {
     renderMediaList(songs) {
         this.tracks = songs; // Store tracks for next/prev
         console.log("🎨 Rendering Media List with tracks:", songs);
-        this.mediaList.innerHTML = '<div class="text-[8px] opacity-30 uppercase tracking-[0.2em] px-2 py-1.5 font-bold">Tactical Library</div>';
+        this.mediaList.innerHTML = '<div class="text-[8px] opacity-30 uppercase tracking-[0.2em] px-2 py-1.5 font-bold">Library</div>';
         
         songs.forEach((song, index) => {
             const item = document.createElement('div');

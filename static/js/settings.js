@@ -17,6 +17,11 @@ export class SettingsController {
         this.activeSkin = null;
         this.gridFilter = false;
         this.cockpitMode = false;
+        
+        this.borderColor = '#ffffff';
+        this.bgColor = '#000000';
+        this.bgImage = null;
+        this.isPrivacyMode = false;
 
         this.bindEvents();
         this.loadSettings(); // Load from Local or Backend
@@ -54,6 +59,10 @@ export class SettingsController {
         if (data.isMirrored !== undefined) this.isMirrored = data.isMirrored;
         if (data.gridFilter !== undefined) this.gridFilter = data.gridFilter;
         if (data.cockpitMode !== undefined) this.cockpitMode = data.cockpitMode;
+        if (data.borderColor) this.borderColor = data.borderColor;
+        if (data.bgColor) this.bgColor = data.bgColor;
+        if (data.bgImage !== undefined) this.bgImage = data.bgImage;
+        if (data.isPrivacyMode !== undefined) this.isPrivacyMode = data.isPrivacyMode;
         
         if (data.activeTheme) this.applyTheme(data.activeTheme);
         if (data.activeSkin) this.applySkin(data.activeSkin);
@@ -71,7 +80,11 @@ export class SettingsController {
             activeTheme: this.activeTheme,
             activeSkin: this.activeSkin,
             gridFilter: this.gridFilter,
-            cockpitMode: this.cockpitMode
+            cockpitMode: this.cockpitMode,
+            borderColor: this.borderColor,
+            bgColor: this.bgColor,
+            bgImage: this.bgImage,
+            isPrivacyMode: this.isPrivacyMode
         };
 
         // Save Local
@@ -190,6 +203,52 @@ export class SettingsController {
                 this.saveSettings();
             });
         }
+
+        const borderColorPicker = document.getElementById('border-color-picker');
+        if (borderColorPicker) {
+            borderColorPicker.value = this.borderColor;
+            borderColorPicker.addEventListener('input', (e) => {
+                this.borderColor = e.target.value;
+                this.updateStyles();
+            });
+            borderColorPicker.addEventListener('change', () => this.saveSettings());
+        }
+
+        const bgColorPicker = document.getElementById('bg-color-picker');
+        if (bgColorPicker) {
+            bgColorPicker.value = this.bgColor;
+            bgColorPicker.addEventListener('input', (e) => {
+                this.bgColor = e.target.value;
+                this.bgImage = null; // Clear image when color picked
+                this.updateStyles();
+            });
+            bgColorPicker.addEventListener('change', () => this.saveSettings());
+        }
+
+        const bgImageUpload = document.getElementById('bg-image-upload');
+        if (bgImageUpload) {
+            bgImageUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        this.bgImage = event.target.result;
+                        this.updateStyles();
+                        this.saveSettings();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        const privacyBtn = document.getElementById('btn-privacy-toggle');
+        if (privacyBtn) {
+            privacyBtn.addEventListener('click', () => {
+                this.isPrivacyMode = !this.isPrivacyMode;
+                this.updateStyles();
+                this.saveSettings();
+            });
+        }
     }
 
     applyTheme(theme) {
@@ -239,6 +298,38 @@ export class SettingsController {
         document.documentElement.style.setProperty('--panel-scale', `${this.panelScale}`);
         document.documentElement.style.setProperty('--text-size', `${this.textSize}px`);
         document.documentElement.style.setProperty('--mirror-scale', this.isMirrored ? '-1' : '1');
+        
+        if (this.bgImage) {
+            document.body.style.backgroundImage = `url('${this.bgImage}')`;
+            document.body.style.backgroundSize = 'cover';
+            document.body.style.backgroundPosition = 'center';
+            document.body.style.backgroundColor = 'transparent';
+        } else {
+            document.body.style.backgroundImage = 'none';
+            document.body.style.backgroundColor = this.bgColor;
+        }
+        document.documentElement.style.setProperty('--app-border-color', this.borderColor);
+        
+        const borderColorPicker = document.getElementById('border-color-picker');
+        if (borderColorPicker) borderColorPicker.value = this.borderColor;
+        const bgColorPicker = document.getElementById('bg-color-picker');
+        if (bgColorPicker) bgColorPicker.value = this.bgColor;
+
+        const mediaContainer = document.getElementById('media-container');
+        const privacyBtn = document.getElementById('btn-privacy-toggle');
+        const privacyDot = document.getElementById('privacy-dot');
+        
+        if (mediaContainer) {
+            mediaContainer.style.opacity = this.isPrivacyMode ? '0' : '1';
+            mediaContainer.style.pointerEvents = this.isPrivacyMode ? 'none' : 'auto';
+        }
+        
+        if (privacyBtn && privacyDot) {
+            privacyBtn.classList.toggle('bg-blue-500/30', this.isPrivacyMode);
+            privacyDot.style.left = this.isPrivacyMode ? 'calc(100% - 16px)' : '4px';
+            privacyDot.classList.toggle('bg-blue-400', this.isPrivacyMode);
+            privacyDot.classList.toggle('shadow-[0_0_10px_#60a5fa]', this.isPrivacyMode);
+        }
     }
 
     setAppOpen(isOpen, appName = null) {

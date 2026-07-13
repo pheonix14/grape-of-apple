@@ -55,11 +55,11 @@ export class IntelController {
         this.resultsList.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 animate-pulse">
                 <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                <p class="text-[10px] font-black uppercase tracking-[0.3em] mt-4">Neural Scanning...</p>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] mt-4">Scanning...</p>
             </div>
         `;
 
-        const matches = await this.map.searchNeuralIntel(query);
+        const matches = await this.map.searchIntel(query);
         this.renderResults(matches);
     }
 
@@ -101,7 +101,7 @@ export class IntelController {
                 <div class="flex justify-between items-start">
                     <div class="flex flex-col">
                         <h3 class="text-sm font-black text-white uppercase tracking-tighter">${m.name}</h3>
-                        <span class="text-[9px] font-bold text-blue-400/60 uppercase tracking-widest">${m.category || 'Neural Node'}</span>
+                        <span class="text-[9px] font-bold text-blue-400/60 uppercase tracking-widest">${m.category || 'Node'}</span>
                     </div>
                     <button class="interactable w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group-hover:bg-blue-500/40 transition-all">
                         <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

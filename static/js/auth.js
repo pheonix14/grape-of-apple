@@ -19,6 +19,11 @@ export class AuthController {
         this.btnLogout = document.getElementById('btn-auth-logout');
         this.btnClose = document.getElementById('btn-auth-close');
         this.btnKeyboard = document.getElementById('auth-keyboard-btn');
+        
+        // User HUD
+        this.userHUD = document.getElementById('user-hud');
+        this.hudName = document.getElementById('user-hud-name');
+        this.btnHUDLogout = document.getElementById('btn-hud-logout');
 
         this.currentUser = null;
         this.init();
@@ -29,6 +34,7 @@ export class AuthController {
         if (this.btnLogin) this.btnLogin.addEventListener('click', () => this.handleLogin());
         if (this.btnSignup) this.btnSignup.addEventListener('click', () => this.handleSignup());
         if (this.btnLogout) this.btnLogout.addEventListener('click', () => this.handleLogout());
+        if (this.btnHUDLogout) this.btnHUDLogout.addEventListener('click', () => this.handleLogout());
 
         if (this.btnKeyboard) {
             this.btnKeyboard.addEventListener('click', () => {
@@ -90,7 +96,7 @@ export class AuthController {
             return;
         }
 
-        this.statusText.innerText = "TACTICAL SYNC...";
+        this.statusText.innerText = "SYNC...";
         this.statusText.classList.remove('text-red-400');
         this.btnLogin.disabled = true;
 
@@ -181,6 +187,13 @@ export class AuthController {
         }
         this.statusText.innerText = "SESSION ACTIVE";
         
+        // Update HUD
+        if (this.userHUD) {
+            this.hudName.innerText = user.user_id;
+            this.userHUD.classList.remove('opacity-0', 'pointer-events-none', 'translate-x-10');
+            this.userHUD.classList.add('opacity-100', 'translate-x-0');
+        }
+
         // Notify Reward Engine to update balance
         if (window.rewardEngine) window.rewardEngine.updateLiveBalance();
     }
@@ -192,9 +205,13 @@ export class AuthController {
         this.form.classList.remove('hidden');
         this.userIdInput.value = '';
         this.passwordInput.value = '';
-        this.statusText.innerText = "SECURITY PROTOCOL 1.0";
+        if (this.userHUD) {
+            this.userHUD.classList.add('opacity-0', 'pointer-events-none', 'translate-x-10');
+            this.userHUD.classList.remove('opacity-100', 'translate-x-0');
+        }
+        
         if (window.rewardEngine) {
-            document.getElementById('gold-balance').innerText = "0000";
+            window.rewardEngine.reset();
         }
     }
 

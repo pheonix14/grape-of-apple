@@ -221,7 +221,7 @@ export class TravelReports {
     }
 
     showError(msg) {
-        this.list.innerHTML = `<div class="text-center text-red-400 py-10 font-bold uppercase tracking-widest text-[10px]">Neural Failure: ${msg}</div>`;
+        this.list.innerHTML = `<div class="text-center text-red-400 py-10 font-bold uppercase tracking-widest text-[10px]">Failure: ${msg}</div>`;
         if (this.scrollTrack) this.scrollTrack.classList.add('hidden');
     }
 

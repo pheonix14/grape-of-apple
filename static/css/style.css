@@ -270,3 +270,10 @@ body.tron-legacy-grid #system-grid {
     transform: rotateX(75deg) scale(4);
     transform-origin: center bottom;
 }
+
+/* Ensure mini visualizer has no background even with skins */
+canvas#mini-visualizer-canvas {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}

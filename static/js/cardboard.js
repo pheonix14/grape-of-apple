@@ -21,7 +21,7 @@ export class CardboardController {
     }
 
     init() {
-        console.log("🚀 Initializing Neural Cardboard Engine...");
+        console.log("🚀 Initializing Tactical Cardboard Engine...");
         
         // Mode Toggle
         const toggleBtn = document.getElementById('btn-cardboard-toggle');
@@ -67,7 +67,7 @@ export class CardboardController {
         const physicsBtn = document.getElementById('btn-physics-fix');
         if (physicsBtn) {
             physicsBtn.onclick = () => {
-                console.log("🧬 Applying Neural Physics Specs (8cm Fix)");
+                console.log("🧬 Applying Tactical Physics Specs (8cm Fix)");
                 this.ipd = 35; // Convergence Offset
                 this.vOff = -5; // Gaze curvature fix
                 this.vScale = 0.75; // Near-field focus fix
@@ -114,11 +114,11 @@ export class CardboardController {
         // Since duplication is heavy, we'll use a simpler trick:
         // Wrap everything in a main container and use a specialized layout.
         // For a true "No Lens" experience, we'll rely on the CSS grid split.
-        console.log("Entering Neural Cardboard Mode...");
+        console.log("Entering Tactical Cardboard Mode...");
     }
 
     teardownSplitScreen() {
-        console.log("Exiting Neural Cardboard Mode...");
+        console.log("Exiting Tactical Cardboard Mode...");
     }
 
     togglePanel(show) {

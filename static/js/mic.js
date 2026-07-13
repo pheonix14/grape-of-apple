@@ -1,4 +1,4 @@
-console.log("🚀 TACTICAL ASSISTANT V6.0 - LOGISTICS ENABLED");
+console.log("🚀 ASSISTANT V6.0 - LOGISTICS ENABLED");
 
 export class MicAssistant {
     constructor(mapController, getTravelReports, persistence) {
@@ -34,7 +34,7 @@ export class MicAssistant {
             this.isActive = true;
             this.overlay.classList.remove('hidden');
             setTimeout(() => this.overlay.classList.remove('opacity-0'), 10);
-            this.statusText.innerText = "Tactical Syncing...";
+            this.statusText.innerText = "Syncing...";
             this.micIconSvg.classList.add('text-red-500'); 
         };
 
@@ -126,7 +126,7 @@ export class MicAssistant {
         this.optionsContainer.innerHTML = "";
         
         if (matches && matches.length > 0) {
-            this.statusText.innerText = `Tactical Nodes for "${query}"`;
+            this.statusText.innerText = `Nodes for "${query}"`;
             
             matches.slice(0, 5).forEach(m => {
                 const btn = document.createElement('div');
