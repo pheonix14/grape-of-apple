@@ -21,7 +21,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 async def read_index():
-    return FileResponse("static/grape_v1.3.html")
+    return FileResponse("static/grape_v1.4.html")
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371
