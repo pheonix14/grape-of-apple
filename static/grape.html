@@ -15,6 +15,28 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/temp_skins.css">
 
+    <!-- Instant 0ms Theme & Customization Boot Script -->
+    <script>
+        (function() {
+            try {
+                var local = localStorage.getItem('grape_os_settings');
+                if (local) {
+                    var data = JSON.parse(local);
+                    var root = document.documentElement;
+                    if (data.appSize) root.style.setProperty('--app-size', data.appSize + 'px');
+                    if (data.panelScale) root.style.setProperty('--panel-scale', data.panelScale);
+                    if (data.textSize) {
+                        root.style.setProperty('--text-size', data.textSize + 'px');
+                        root.style.fontSize = data.textSize + 'px';
+                    }
+                    if (data.borderColor) root.style.setProperty('--app-border-color', data.borderColor);
+                    window.__INITIAL_THEME__ = data.activeTheme;
+                    window.__INITIAL_SKIN__ = data.activeSkin;
+                }
+            } catch(e) {}
+        })();
+    </script>
+
     <!-- MediaPipe Hands -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"

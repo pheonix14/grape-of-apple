@@ -34,28 +34,31 @@ export class SettingsController {
     }
 
     async loadSettings() {
-        // 1. Try to load from Local Storage first for instant boot
+        // 1. Instantly apply from Local Storage (0ms synchronous render)
         const local = localStorage.getItem('grape_os_settings');
         if (local) {
-            this.applySettingsData(JSON.parse(local));
+            try {
+                this.applySettingsData(JSON.parse(local));
+            } catch (e) { console.warn("Local Storage Parse Error:", e); }
         }
+        this.updateStyles();
 
-        // 2. If logged in, try to load from Backend
+        // 2. Non-blocking async background fetch from Backend for logged-in user
         const savedUser = localStorage.getItem('grape_os_user');
         if (savedUser) {
             try {
                 const user = JSON.parse(savedUser);
                 const res = await fetch(`/api/user/config/${user.user_id}`);
                 const result = await res.json();
-                if (result.status === 'ok' && Object.keys(result.settings).length > 0) {
+                if (result.status === 'ok' && result.settings && Object.keys(result.settings).length > 0) {
                     this.applySettingsData(result.settings);
+                    this.updateStyles();
                     localStorage.setItem('grape_os_settings', JSON.stringify(result.settings));
                 }
             } catch (e) {
-                console.warn("Backend Config Load Failed:", e);
+                console.warn("Backend Config Background Load Failed:", e);
             }
         }
-        this.updateStyles();
     }
 
     applySettingsData(data) {

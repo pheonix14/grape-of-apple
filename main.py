@@ -8,10 +8,11 @@ from dotenv import load_dotenv
 from dataengine import DataEngine
 from brainengine import BrainEngine
 from skin_handler import SkinHandler
+from theme import ThemeEngine
 
 load_dotenv()
 
-app = FastAPI(title="Grape OS Engine", version="5.4.2")
+app = FastAPI(title="Grape OS Engine", version="5.4.3")
 
 os.makedirs("static", exist_ok=True)
 os.makedirs("data", exist_ok=True)
@@ -20,6 +21,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Core Engine Instances
 data_engine = DataEngine(data_dir="data")
 brain_engine = BrainEngine()
+theme_engine = ThemeEngine()
 
 @app.get("/")
 async def read_home():
@@ -97,10 +99,14 @@ async def query_brain(data: dict = Body(...)):
     res = await brain_engine.query(prompt, system_prompt=sys_prompt)
     return res
 
-# --- SKINS PRESET ROUTE ---
+# --- SKINS & THEMES PRESET ROUTE ---
 @app.get("/api/skins/presets")
 async def get_skins():
-    return {"status": "ok", "presets": SkinHandler.get_presets()}
+    return {"status": "ok", "presets": SkinHandler.get_presets(), "themes": ThemeEngine.get_presets()}
+
+@app.get("/api/theme/presets")
+async def get_theme_presets():
+    return {"status": "ok", "theme_presets": ThemeEngine.get_presets()}
 
 # --- SUPABASE DATA SYNC ROUTE ---
 @app.post("/api/data/sync")
