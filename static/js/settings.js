@@ -135,7 +135,6 @@ export class SettingsController {
         if (sizeDown) {
             sizeDown.addEventListener('click', () => {
                 this.appSize = Math.max(32, this.appSize - 8);
-                this.panelScale = Math.max(0.5, this.panelScale - 0.1);
                 this.updateStyles();
                 this.saveSettings();
             });
@@ -144,6 +143,22 @@ export class SettingsController {
         if (sizeUp) {
             sizeUp.addEventListener('click', () => {
                 this.appSize = Math.min(160, this.appSize + 8);
+                this.updateStyles();
+                this.saveSettings();
+            });
+        }
+
+        const panelDown = document.getElementById('btn-panel-down');
+        if (panelDown) {
+            panelDown.addEventListener('click', () => {
+                this.panelScale = Math.max(0.5, this.panelScale - 0.1);
+                this.updateStyles();
+                this.saveSettings();
+            });
+        }
+        const panelUp = document.getElementById('btn-panel-up');
+        if (panelUp) {
+            panelUp.addEventListener('click', () => {
                 this.panelScale = Math.min(2.0, this.panelScale + 0.1);
                 this.updateStyles();
                 this.saveSettings();
@@ -179,6 +194,18 @@ export class SettingsController {
             }
         });
 
+        // Skin Bindings including Default
+        ['btn-skin-default', 'btn-skin-rb', 'btn-skin-blue', 'btn-skin-rw', 'btn-skin-legacy'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const skin = id.replace('btn-skin-', '');
+                    this.applySkin(skin);
+                    this.saveSettings();
+                });
+            }
+        });
+        
         const mirrorBtn = document.getElementById('btn-mirror-toggle');
         if (mirrorBtn) {
             mirrorBtn.addEventListener('click', () => {
@@ -323,12 +350,19 @@ export class SettingsController {
     applySkin(skin) {
         const allSkins = ['skin-ares-rb', 'skin-ares-blue', 'skin-ares-rw', 'skin-legacy'];
         document.body.classList.remove(...allSkins);
-        this.activeSkin = skin;
-        const skinClass = skin === 'legacy' ? 'skin-legacy' : (skin === 'blue' ? 'skin-ares-blue' : `skin-ares-${skin}`);
-        document.body.classList.add(skinClass);
-        // Update UI
+        
+        if (!skin || skin === 'default') {
+            this.activeSkin = 'default';
+        } else {
+            this.activeSkin = skin;
+            const skinClass = skin === 'legacy' ? 'skin-legacy' : (skin === 'blue' ? 'skin-ares-blue' : `skin-ares-${skin}`);
+            document.body.classList.add(skinClass);
+        }
+        
+        // Update UI active indicator ring
         document.querySelectorAll('[id^="btn-skin-"]').forEach(b => b.classList.remove('ring-2', 'ring-white', 'shadow-[0_0_20px_rgba(255,255,255,0.4)]'));
-        const activeBtn = document.getElementById(`btn-skin-${skin}`);
+        const activeBtnId = `btn-skin-${this.activeSkin || 'default'}`;
+        const activeBtn = document.getElementById(activeBtnId);
         if (activeBtn) activeBtn.classList.add('ring-2', 'ring-white', 'shadow-[0_0_20px_rgba(255,255,255,0.4)]');
     }
 
@@ -352,6 +386,7 @@ export class SettingsController {
         document.documentElement.style.setProperty('--app-size', `${this.appSize}px`);
         document.documentElement.style.setProperty('--panel-scale', `${this.panelScale}`);
         document.documentElement.style.setProperty('--text-size', `${this.textSize}px`);
+        document.documentElement.style.fontSize = `${this.textSize}px`;
         document.documentElement.style.setProperty('--mirror-scale', this.isMirrored ? '-1' : '1');
         
         if (this.bgImage) {

@@ -311,34 +311,43 @@
                 </div>
 
                 <!-- Main Utility Bar -->
-                <div class="grid grid-cols-4 gap-2">
-                    <div class="flex flex-col gap-1.5 p-2.5 bg-white/5 rounded-xl border border-white/10">
-                        <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Scale</span>
+                <div class="grid grid-cols-5 gap-2">
+                    <div class="flex flex-col gap-1.5 p-2 bg-white/5 rounded-xl border border-white/10">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Icons</span>
                         <div class="flex gap-1">
-                            <button id="btn-size-down"
-                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold flex items-center justify-center">-</button>
-                            <button id="btn-size-up"
-                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold flex items-center justify-center">+</button>
+                            <button id="btn-size-down" title="Decrease Sidebar Icon Size"
+                                class="interactable flex-1 h-8 bg-white/10 hover:bg-white/20 rounded-lg text-base font-bold flex items-center justify-center">-</button>
+                            <button id="btn-size-up" title="Increase Sidebar Icon Size"
+                                class="interactable flex-1 h-8 bg-white/10 hover:bg-white/20 rounded-lg text-base font-bold flex items-center justify-center">+</button>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-1.5 p-2.5 bg-white/5 rounded-xl border border-white/10">
+                    <div class="flex flex-col gap-1.5 p-2 bg-white/5 rounded-xl border border-white/10">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Panel</span>
+                        <div class="flex gap-1">
+                            <button id="btn-panel-down" title="Decrease Control Panel Size"
+                                class="interactable flex-1 h-8 bg-white/10 hover:bg-white/20 rounded-lg text-base font-bold flex items-center justify-center">-</button>
+                            <button id="btn-panel-up" title="Increase Control Panel Size"
+                                class="interactable flex-1 h-8 bg-white/10 hover:bg-white/20 rounded-lg text-base font-bold flex items-center justify-center">+</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1.5 p-2 bg-white/5 rounded-xl border border-white/10">
                         <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Text</span>
                         <div class="flex gap-1">
-                            <button id="btn-text-down"
-                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold flex items-center justify-center">-</button>
-                            <button id="btn-text-up"
-                                class="interactable flex-1 h-9 bg-white/10 hover:bg-white/20 rounded-lg text-lg font-bold flex items-center justify-center">+</button>
+                            <button id="btn-text-down" title="Decrease UI Text Size"
+                                class="interactable flex-1 h-8 bg-white/10 hover:bg-white/20 rounded-lg text-base font-bold flex items-center justify-center">-</button>
+                            <button id="btn-text-up" title="Increase UI Text Size"
+                                class="interactable flex-1 h-8 bg-white/10 hover:bg-white/20 rounded-lg text-base font-bold flex items-center justify-center">+</button>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-1.5 p-2.5 bg-white/5 rounded-xl border border-white/10 justify-between">
+                    <div class="flex flex-col gap-1.5 p-2 bg-white/5 rounded-xl border border-white/10 justify-between">
                         <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Mirror</span>
                         <button id="btn-mirror-toggle"
-                            class="interactable w-full h-9 bg-white/10 hover:bg-white/20 rounded-lg font-black uppercase text-[10px] tracking-wider">Flip</button>
+                            class="interactable w-full h-8 bg-white/10 hover:bg-white/20 rounded-lg font-black uppercase text-[9px] tracking-wider">Flip</button>
                     </div>
-                    <div class="flex flex-col gap-1.5 p-2.5 bg-white/5 rounded-xl border border-white/10 justify-between">
+                    <div class="flex flex-col gap-1.5 p-2 bg-white/5 rounded-xl border border-white/10 justify-between">
                         <span class="text-[9px] font-black uppercase tracking-widest text-white/60">Stereo</span>
                         <button id="btn-cardboard-toggle"
-                            class="interactable w-full h-9 bg-white/10 hover:bg-white/20 rounded-lg font-black uppercase text-[10px] tracking-wider">Toggle</button>
+                            class="interactable w-full h-8 bg-white/10 hover:bg-white/20 rounded-lg font-black uppercase text-[9px] tracking-wider">Toggle</button>
                     </div>
                 </div>
 
@@ -393,15 +402,17 @@
                     </div>
                     <div class="flex flex-col gap-2.5 p-3 bg-white/5 rounded-2xl border border-white/10">
                         <span class="text-[10px] font-black uppercase tracking-widest text-white/70 px-0.5">Button Skins</span>
-                        <div class="grid grid-cols-2 gap-1.5">
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button id="btn-skin-default"
+                                class="interactable h-8 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-[9px] font-bold uppercase text-white">Default</button>
                             <button id="btn-skin-rb"
-                                class="interactable h-9 bg-red-600/10 hover:bg-red-600/20 rounded-xl border border-red-600/30 text-[10px] font-bold uppercase text-red-500">Ares RB</button>
+                                class="interactable h-8 bg-red-600/10 hover:bg-red-600/20 rounded-xl border border-red-600/30 text-[9px] font-bold uppercase text-red-500">Ares RB</button>
                             <button id="btn-skin-blue"
-                                class="interactable h-9 bg-blue-600/10 hover:bg-blue-600/20 rounded-xl border border-blue-600/30 text-[10px] font-bold uppercase text-blue-500">Ares Blue</button>
+                                class="interactable h-8 bg-blue-600/10 hover:bg-blue-600/20 rounded-xl border border-blue-600/30 text-[9px] font-bold uppercase text-blue-500">Ares Blue</button>
                             <button id="btn-skin-rw"
-                                class="interactable h-9 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-[10px] font-bold uppercase text-red-500">Ares RW</button>
+                                class="interactable h-8 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-[9px] font-bold uppercase text-red-500">Ares RW</button>
                             <button id="btn-skin-legacy"
-                                class="interactable h-9 bg-cyan-600/10 hover:bg-cyan-600/20 rounded-xl border border-cyan-600/30 text-[10px] font-bold uppercase text-cyan-500">Legacy</button>
+                                class="interactable h-8 bg-cyan-600/10 hover:bg-cyan-600/20 rounded-xl border border-cyan-600/30 text-[9px] font-bold uppercase text-cyan-500">Legacy</button>
                         </div>
                     </div>
                 </div>

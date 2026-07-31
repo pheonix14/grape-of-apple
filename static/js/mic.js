@@ -125,6 +125,29 @@ export class MicAssistant {
             }
 
             this.showResultList(matches, query);
+            return;
+        }
+
+        // 3. HUGGING FACE AI BRAIN FALLBACK FOR GENERAL CONVERSATION & QUESTIONS
+        this.statusText.innerText = "Querying HuggingFace AI Engine...";
+        try {
+            const res = await fetch('/api/brain/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: transcript })
+            });
+            const data = await res.json();
+            if (data && data.reply) {
+                this.statusText.innerText = `[${data.model || 'HF AI'}] ${data.reply}`;
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(data.reply);
+                    utterance.rate = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                }
+            }
+        } catch (err) {
+            console.error("[MIC] HF AI Query Error:", err);
+            this.statusText.innerText = "AI Response Engine Unavailable";
         }
     }
 
