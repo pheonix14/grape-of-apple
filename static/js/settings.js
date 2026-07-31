@@ -426,19 +426,8 @@ export class SettingsController {
     }
 
     setAppOpen(isOpen, appName = null) {
-        if (appName === 'music') {
-            if (isOpen) document.body.classList.add('active-music');
-            else document.body.classList.remove('active-music');
-            const musicIcon = document.querySelector('.sidebar-toolbar [data-app="music"]');
-            if (musicIcon) {
-                if (isOpen) musicIcon.classList.add('active-app');
-                else musicIcon.classList.remove('active-app');
-            }
-            return;
-        }
-
-        document.body.classList.remove('app-open', 'active-settings', 'active-map');
-        const sidebarIcons = document.querySelectorAll('.sidebar-toolbar .interactable:not([data-app="music"])');
+        document.body.classList.remove('app-open', 'active-settings', 'active-map', 'active-music');
+        const sidebarIcons = document.querySelectorAll('.sidebar-toolbar .interactable');
         sidebarIcons.forEach(icon => icon.classList.remove('active-app'));
 
         if (isOpen) {

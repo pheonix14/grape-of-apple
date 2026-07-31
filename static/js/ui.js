@@ -88,6 +88,13 @@ export class UIController {
             if (!el || el === document.body || el === document.documentElement) continue;
             if (el.id?.includes('spatial-cursor') || el.id?.includes('output_canvas') || el.id?.includes('input_video')) continue;
 
+            if (el.id === 'map-container' || el.classList.contains('leaflet-container') || el.closest('#map-container')) {
+                if (window.mapController && window.mapController.map) {
+                    window.mapController.map.panBy([-deltaX * 2.5, -deltaY * 2.5], { animate: false });
+                }
+                break;
+            }
+
             const style = window.getComputedStyle(el);
             const overflowY = style.overflowY;
             const overflowX = style.overflowX;

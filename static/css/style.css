@@ -126,6 +126,10 @@ body.app-open .sidebar-toolbar .interactable.active-app:not([data-app="music"]) 
     transition: width 0.3s ease, height 0.3s ease, font-size 0.3s ease;
 }
 
+#btn-mic-toggle.app-icon-size {
+    border-radius: 9999px !important;
+}
+
 #settings-panel {
     transform: translate(-50%, -50%) scale(var(--panel-scale));
     transition: transform 0.5s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.5s ease;

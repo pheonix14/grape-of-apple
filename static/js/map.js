@@ -152,10 +152,12 @@ export class MapController {
             this.btnClear.addEventListener('click', () => {
                 if (this.destinationMarker) this.map.removeLayer(this.destinationMarker);
                 this.destinationMarker = null;
+                this.selectedDestination = null;
                 this.activePolylines.forEach(p => this.map.removeLayer(p));
                 this.activePolylines = [];
                 if (this.routeList) this.routeList.innerHTML = "";
                 this.infoPanel.classList.add('hidden');
+                if (this.btnIntelToggle) this.btnIntelToggle.classList.add('hidden');
             });
         }
 
@@ -351,7 +353,11 @@ export class MapController {
     initMap() {
         this.map = L.map('map-container', { 
             zoomControl: false,
-            doubleClickZoom: false
+            doubleClickZoom: false,
+            touchZoom: true,
+            scrollWheelZoom: true,
+            dragging: true,
+            bounceAtZoomLimits: false
         }).setView(this.userLocation, 13);
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -587,6 +593,7 @@ export class MapController {
         // Clear destination marker
         if (this.destinationMarker) this.map.removeLayer(this.destinationMarker);
         this.destinationMarker = null;
+        if (this.btnIntelToggle) this.btnIntelToggle.classList.add('hidden');
         
         // Reset UI
         if (this.btnStop) this.btnStop.classList.add('hidden');
@@ -695,7 +702,10 @@ export class MapController {
             }
             
             // 1. Restore Tactical Overlay Controls
-            if (this.btnIntelToggle) this.btnIntelToggle.classList.remove('hidden');
+            if (this.btnIntelToggle) {
+                if (this.selectedDestination) this.btnIntelToggle.classList.remove('hidden');
+                else this.btnIntelToggle.classList.add('hidden');
+            }
             if (this.btnMarker) this.btnMarker.classList.remove('hidden');
 
             // 3. Reset Intel Panel Position
@@ -706,17 +716,17 @@ export class MapController {
                 this.intelPanel.style.maxHeight = "85%";
             }
             
-            // 2. Reset Utility Row (Restore to Top-Center Horizontal Bar)
-            zoomContainer.style.flexDirection = "row";
+            // 2. Reset Utility Row (Restore to Right-Side Vertical Column)
+            zoomContainer.style.flexDirection = "column";
             zoomContainer.style.position = "absolute";
-            zoomContainer.style.top = "2rem"; // 32px
-            zoomContainer.style.left = "50%";
-            zoomContainer.style.transform = "translateX(-50%)";
-            zoomContainer.style.right = "auto";
+            zoomContainer.style.top = "50%";
+            zoomContainer.style.transform = "translateY(-50%)";
+            zoomContainer.style.right = "1rem";
+            zoomContainer.style.left = "auto";
             zoomContainer.style.bottom = "auto";
             zoomContainer.style.width = "auto";
             zoomContainer.style.height = "auto";
-            zoomContainer.classList.add('gap-4');
+            zoomContainer.classList.add('gap-2.5');
             
             [this.btnZoomIn, this.btnZoomOut, this.btnLocate, this.btnClear, this.btnStop, this.btnMinimize].forEach(btn => {
                 if (btn) {
