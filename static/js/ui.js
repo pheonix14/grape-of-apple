@@ -31,6 +31,9 @@ export class UIController {
     }
 
     updateCursor(x, y) {
+        const deltaX = x - this.currentX;
+        const deltaY = y - this.currentY;
+
         this.currentX = x;
         this.currentY = y;
         
@@ -66,8 +69,47 @@ export class UIController {
             }
         }
 
+        // Spatial Pinch Scroll for all windows, panels, boxes, tables, tab lists
+        if (this.isPinching) {
+            this.handleSpatialPinchScroll(x, y, deltaX, deltaY);
+        }
+
         this.checkHover(x, y);
         this.applyPanelTilt(x, y);
+    }
+
+    handleSpatialPinchScroll(x, y, deltaX, deltaY) {
+        if (Math.abs(deltaX) < 0.2 && Math.abs(deltaY) < 0.2) return;
+
+        const elements = document.elementsFromPoint(x, y);
+        if (!elements || elements.length === 0) return;
+
+        for (let el of elements) {
+            if (!el || el === document.body || el === document.documentElement) continue;
+            if (el.id?.includes('spatial-cursor') || el.id?.includes('output_canvas') || el.id?.includes('input_video')) continue;
+
+            const style = window.getComputedStyle(el);
+            const overflowY = style.overflowY;
+            const overflowX = style.overflowX;
+
+            const canScrollY = (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay' || 
+                                el.classList.contains('overflow-y-auto') || el.classList.contains('overflow-auto')) && 
+                               (el.scrollHeight > el.clientHeight + 2);
+
+            const canScrollX = (overflowX === 'auto' || overflowX === 'scroll' || overflowX === 'overlay' || 
+                                el.classList.contains('overflow-x-auto') || el.classList.contains('overflow-auto')) && 
+                               (el.scrollWidth > el.clientWidth + 2);
+
+            if (canScrollY || canScrollX) {
+                if (canScrollY && Math.abs(deltaY) > 0.3) {
+                    el.scrollTop -= deltaY * 1.5;
+                }
+                if (canScrollX && Math.abs(deltaX) > 0.3) {
+                    el.scrollLeft -= deltaX * 1.5;
+                }
+                break; // Scroll top-most target window/box
+            }
+        }
     }
 
     setPinching(pinching, isSynthetic = true) {

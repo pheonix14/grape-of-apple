@@ -11,7 +11,7 @@ from skin_handler import SkinHandler
 
 load_dotenv()
 
-app = FastAPI(title="Grape OS Engine", version="5.4.1")
+app = FastAPI(title="Grape OS Engine", version="5.4.2")
 
 os.makedirs("static", exist_ok=True)
 os.makedirs("data", exist_ok=True)
