@@ -1,4 +1,4 @@
-# Use an official Python runtime as a parent image
+# Use lightweight official Python runtime as parent image
 FROM python:3.10-slim
 
 # Set the working directory in the container
@@ -7,14 +7,16 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install any needed packages specified in requirements.txt
+# Install dependencies without caching to keep image and RAM light
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 8000 available to the world outside this container
+# Make port 8000 available
 EXPOSE 8000
 
-# Define environment variable
+# Define environment variables
 ENV PORT=8000
+ENV PYTHONUNBUFFERED=1
+ENV MALLOC_TRIM_THRESHOLD_=100000
 
-# Run uvicorn when the container launches
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
+# Run uvicorn single worker process (RAM footprint < 100 MB)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1"]
