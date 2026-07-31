@@ -103,16 +103,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return auth;
     };
 
-    const initAIHub = () => {
+    const initAIHub = (openPanel = true) => {
         if (!aiHub) {
-            console.log('[SYSTEM] LAZY LOADING AI INTEL HUB...');
+            console.log('[SYSTEM] INITIALIZING AI INTEL HUB...');
             aiHub = new AIController(settings);
             window.aiController = aiHub;
             persistence.trackAppOpen('ai-hub');
         }
-        aiHub.open();
+        if (openPanel) aiHub.open();
         return aiHub;
     };
+    window.initAIHub = initAIHub;
+    initAIHub(false); // Eagerly instantiate background listener & TTS engine
 
     // Pre-load top-used apps to prevent lag if they are common
     if (persistence.isTopUsed('map')) initMap();

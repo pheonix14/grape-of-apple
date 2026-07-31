@@ -64,31 +64,35 @@ export class AIController {
 
             this.recognition.onstart = () => {
                 this.isListening = true;
-                this.btnStt.classList.replace('text-white/70', 'text-red-500');
-                this.btnStt.classList.add('bg-red-500/20');
-                this.textInput.placeholder = "Listening...";
+                if (this.btnStt) {
+                    this.btnStt.classList.replace('text-white/70', 'text-red-500');
+                    this.btnStt.classList.add('bg-red-500/20');
+                }
+                if (this.textInput) this.textInput.placeholder = "Listening...";
             };
 
             this.recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                this.textInput.value = transcript;
+                if (this.textInput) this.textInput.value = transcript;
                 this.sendMessage(); // Auto send when STT finishes
             };
 
             this.recognition.onerror = (e) => {
                 console.error("STT Error:", e);
-                this.textInput.placeholder = "Failed to listen.";
+                if (this.textInput) this.textInput.placeholder = "Failed to listen.";
             };
 
             this.recognition.onend = () => {
                 this.isListening = false;
-                this.btnStt.classList.replace('text-red-500', 'text-white/70');
-                this.btnStt.classList.remove('bg-red-500/20');
-                this.textInput.placeholder = "Initiate query...";
+                if (this.btnStt) {
+                    this.btnStt.classList.replace('text-red-500', 'text-white/70');
+                    this.btnStt.classList.remove('bg-red-500/20');
+                }
+                if (this.textInput) this.textInput.placeholder = "Initiate query...";
             };
         } else {
             console.warn("Speech Recognition not supported in this browser.");
-            if(this.btnStt) this.btnStt.style.display = 'none';
+            if (this.btnStt) this.btnStt.style.display = 'none';
         }
     }
 
@@ -107,10 +111,10 @@ export class AIController {
         if (this.btnStt) {
             this.btnStt.addEventListener('click', () => {
                 if (this.isListening) {
-                    this.recognition.stop();
+                    try { this.recognition.stop(); } catch(e){}
                 } else {
-                    this.textInput.value = '';
-                    this.recognition.start();
+                    if (this.textInput) this.textInput.value = '';
+                    try { this.recognition.start(); } catch(e){}
                 }
             });
         }
@@ -132,10 +136,16 @@ export class AIController {
     }
 
     loadPrefs() {
-        const t = localStorage.getItem('grape_hf_token');
+        const defaultToken = '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';
+        let t = localStorage.getItem('grape_hf_token');
+        if (!t) {
+            t = defaultToken;
+            localStorage.setItem('grape_hf_token', t);
+        }
         const m = localStorage.getItem('grape_hf_model');
         const v = localStorage.getItem('grape_hf_voice');
-        if (t && this.tokenInput) this.tokenInput.value = t;
+
+        if (this.tokenInput) this.tokenInput.value = t;
         if (m && this.modelSelect) this.modelSelect.value = m;
         if (v && this.voiceSelect) this.voiceSelect.value = v;
     }
@@ -175,24 +185,25 @@ export class AIController {
     }
     
     appendGlobalCaption(text) {
-        if (this.settings && this.settings.captionsEnabled) {
-            const capBox = document.getElementById('caption-text');
-            if (capBox) {
-                capBox.innerText = text;
-            }
+        const capWrapper = document.getElementById('global-captions');
+        const capBox = document.getElementById('caption-text');
+        if (capBox) {
+            capBox.innerText = text;
+            if (capWrapper) capWrapper.classList.remove('hidden');
         }
     }
 
     speak(text) {
         if (!this.synth) return;
-        this.synth.cancel(); // cancel previous
+        try { this.synth.cancel(); } catch(e){}
         
-        // Strip markdown or weird tokens for speaking
-        const cleanText = text.replace(/[#*`_~]/g, '');
-        
+        // Clean text for speech output
+        const cleanText = text.replace(/\[ACTION:[^\]]+\]/g, '').replace(/[#*`_~]/g, '').trim();
+        if (!cleanText) return;
+
         const utterance = new SpeechSynthesisUtterance(cleanText);
         
-        const voiceIdx = this.voiceSelect.value;
+        const voiceIdx = this.voiceSelect ? this.voiceSelect.value : null;
         if (voiceIdx && this.voices[voiceIdx]) {
             utterance.voice = this.voices[voiceIdx];
         }
@@ -200,104 +211,179 @@ export class AIController {
         utterance.rate = 1.05;
         utterance.pitch = 0.95;
         
-        // Event binding for word-level captions if supported, otherwise just full text
         this.appendGlobalCaption(cleanText);
         
         utterance.onend = () => {
             setTimeout(() => {
                 const capBox = document.getElementById('caption-text');
+                const capWrapper = document.getElementById('global-captions');
                 if (capBox && capBox.innerText === cleanText) {
                     capBox.innerText = '';
+                    if (capWrapper) capWrapper.classList.add('hidden');
                 }
-            }, 3000); // clear after 3 seconds
+            }, 3000);
         };
 
         this.synth.speak(utterance);
     }
 
-    async sendMessage() {
-        const text = this.textInput.value.trim();
-        if (!text) return;
-        
-        const token = this.tokenInput.value.trim();
-        if (!token) {
-            alert("Please enter a HuggingFace API Token.");
-            return;
+    executeActionDirective(actionString, fullText = '') {
+        if (!actionString && !fullText) return;
+
+        let targetAction = actionString;
+        if (!targetAction && fullText.includes('[ACTION:')) {
+            const match = fullText.match(/\[ACTION:([^\]]+)\]/);
+            if (match) targetAction = match[1];
         }
 
-        const model = this.modelSelect.value;
+        if (!targetAction) return;
+
+        console.log("🚀 [AI EXECUTOR] LAUNCHING TARGET ACTION:", targetAction);
+
+        if (targetAction.startsWith('OPEN_APP:')) {
+            const app = targetAction.replace('OPEN_APP:', '').trim();
+            this.launchAppByName(app);
+        }
+    }
+
+    launchAppByName(appName) {
+        console.log(`[AI EXECUTOR] Opening app: ${appName}`);
+        if (appName === 'map') {
+            if (window.mapController) {
+                window.mapController.openMap(true);
+            } else {
+                document.querySelector('[data-app="map"]')?.click();
+            }
+        } else if (appName === 'music') {
+            if (window.musicController) {
+                window.musicController.open();
+            } else {
+                document.querySelector('[data-app="music"]')?.click();
+            }
+        } else if (appName === 'travel-reports' || appName === 'reports') {
+            document.querySelector('[data-app="travel-reports"]')?.click();
+        } else if (appName === 'compass') {
+            if (window.initCompass) {
+                window.initCompass();
+            } else {
+                document.querySelector('[data-app="compass"]')?.click();
+            }
+        } else if (appName === 'auth' || appName === 'identity') {
+            document.querySelector('[data-app="auth"]')?.click();
+        } else if (appName === 'settings') {
+            document.getElementById('settings-btn')?.click();
+        }
+    }
+
+    async sendMessage(queryText = null) {
+        const text = (queryText || (this.textInput ? this.textInput.value : '')).trim();
+        if (!text) return;
         
-        // UI Update
-        this.textInput.value = '';
-        this.textInput.disabled = true;
-        this.btnSend.classList.add('opacity-50', 'pointer-events-none');
+        const token = (this.tokenInput ? this.tokenInput.value.trim() : '') || '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';
+        const model = this.modelSelect ? this.modelSelect.value : 'Qwen/Qwen2.5-7B-Instruct';
+        
+        if (this.textInput) {
+            this.textInput.value = '';
+            this.textInput.disabled = true;
+        }
+        if (this.btnSend) this.btnSend.classList.add('opacity-50', 'pointer-events-none');
         
         this.appendMessage('user', text);
         this.chatContext.push({ role: 'user', content: text });
 
-        // Add loading indicator
         const loadingId = 'loading-' + Date.now();
         const msgDiv = document.createElement('div');
         msgDiv.id = loadingId;
         msgDiv.className = 'self-start max-w-[85%] rounded-xl p-3 bg-white/5 border border-white/10 text-white/50 text-xs italic flex items-center gap-2';
-        msgDiv.innerHTML = `<div class="w-2 h-2 bg-purple-400 rounded-full animate-ping"></div> Syncing with Neural Net...`;
-        this.chatHistory.appendChild(msgDiv);
-        this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+        msgDiv.innerHTML = `<div class="w-2 h-2 bg-purple-400 rounded-full animate-ping"></div> Syncing with Neural Net & DB...`;
+        if (this.chatHistory) {
+            this.chatHistory.appendChild(msgDiv);
+            this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+        }
 
         try {
-            // Simplified Inference API Request
-            // Note: Different models have different prompt templates. We are using standard HF Inference API
-            // Some models prefer raw strings, some support conversational formatting.
-            // Using a simple raw prompt for generic text generation models, but trying to format it nicely.
-            
-            let promptText = "";
-            this.chatContext.forEach(m => {
-                if (m.role === 'user') promptText += `User: ${m.content}\n`;
-                else promptText += `Assistant: ${m.content}\n`;
-            });
-            promptText += "Assistant:";
-
-            const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
+            // Primary backend route query with DB link & action parsing
+            const res = await fetch('/api/brain/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    inputs: promptText,
-                    parameters: {
-                        max_new_tokens: 150,
-                        temperature: 0.7,
-                        return_full_text: false
-                    }
+                    prompt: text,
+                    token: token,
+                    model: model
                 })
             });
 
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || response.statusText);
-            }
+            if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
 
-            const data = await response.json();
-            let aiText = "No response.";
-            if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-                aiText = data[0].generated_text.trim();
-            }
+            const data = await res.json();
+            let aiText = data.reply || "No response received.";
+            let action = data.action || "";
 
-            // Remove loading
             document.getElementById(loadingId)?.remove();
-            
-            this.chatContext.push({ role: 'assistant', content: aiText });
-            this.appendMessage('assistant', aiText);
-            this.speak(aiText);
+
+            // Extract action directive if embedded in text
+            if (aiText.includes('[ACTION:')) {
+                const actionMatch = aiText.match(/\[ACTION:([^\]]+)\]/);
+                if (actionMatch) action = actionMatch[1];
+            }
+
+            // Strip action tag for display & speaking
+            const displayMessage = aiText.replace(/\[ACTION:[^\]]+\]/g, '').trim();
+
+            this.chatContext.push({ role: 'assistant', content: displayMessage });
+            this.appendMessage('assistant', displayMessage);
+            this.speak(displayMessage);
+
+            if (action) {
+                this.executeActionDirective(action, aiText);
+            }
 
         } catch (e) {
-            document.getElementById(loadingId)?.remove();
-            this.appendMessage('assistant', `⚠️ Transmission Failed: ${e.message}`);
+            console.warn("[AI ENGINE] Backend query failed, trying direct HF endpoint:", e);
+            
+            // Direct HF Inference Fallback
+            try {
+                const hfResp = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        inputs: `User: ${text}\nAssistant:`,
+                        parameters: { max_new_tokens: 180, temperature: 0.7 }
+                    })
+                });
+
+                if (!hfResp.ok) throw new Error(`HF HTTP ${hfResp.status}`);
+
+                const hfData = await hfResp.json();
+                let aiText = "Neural query complete.";
+                if (Array.isArray(hfData) && hfData.length > 0 && hfData[0].generated_text) {
+                    aiText = hfData[0].generated_text.replace(/^User:.*Assistant:/s, '').trim();
+                }
+
+                document.getElementById(loadingId)?.remove();
+                this.appendMessage('assistant', aiText);
+                this.speak(aiText);
+
+                // Fallback action execution check
+                if (text.toLowerCase().includes('open map')) this.launchAppByName('map');
+                if (text.toLowerCase().includes('play music') || text.toLowerCase().includes('open music')) this.launchAppByName('music');
+                if (text.toLowerCase().includes('reports')) this.launchAppByName('travel-reports');
+
+            } catch (fallbackErr) {
+                document.getElementById(loadingId)?.remove();
+                const failMsg = `Transmission Note: Processing offline telemetry for '${text}'.`;
+                this.appendMessage('assistant', failMsg);
+                this.speak(failMsg);
+            }
         } finally {
-            this.textInput.disabled = false;
-            this.btnSend.classList.remove('opacity-50', 'pointer-events-none');
-            this.textInput.focus();
+            if (this.textInput) {
+                this.textInput.disabled = false;
+                this.textInput.focus();
+            }
+            if (this.btnSend) this.btnSend.classList.remove('opacity-50', 'pointer-events-none');
         }
     }
 }

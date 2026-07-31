@@ -20,7 +20,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Core Engine Instances
 data_engine = DataEngine(data_dir="data")
-brain_engine = BrainEngine()
+brain_engine = BrainEngine(data_engine=data_engine)
 theme_engine = ThemeEngine()
 
 @app.get("/")
@@ -96,7 +96,9 @@ async def get_travel_reports():
 async def query_brain(data: dict = Body(...)):
     prompt = data.get("prompt", "")
     sys_prompt = data.get("system_prompt", None)
-    res = await brain_engine.query(prompt, system_prompt=sys_prompt)
+    user_id = data.get("user_id", "OPERATIVE")
+    token_override = data.get("token", None)
+    res = await brain_engine.query(prompt, user_id=user_id, system_prompt=sys_prompt, token_override=token_override)
     return res
 
 # --- SKINS & THEMES PRESET ROUTE ---

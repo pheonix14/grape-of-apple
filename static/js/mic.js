@@ -80,17 +80,36 @@ export class MicAssistant {
         const action = words[0];
         let query = words.slice(1).join(' ').trim();
 
-        // 1. REPORT / LOGISTICS / SITREP commands
-        if (['report', 'reports', 'sitrep', 'logistics'].includes(action)) {
-            this.statusText.innerText = `Fetching Reports: ${query}`;
-            
+        // 1. APP EXECUTION COMMANDS (Open Map, Play Music, Open Compass, etc.)
+        const lower = transcript.toLowerCase();
+        if (lower.includes('open map') || lower.includes('launch map')) {
+            this.statusText.innerText = "Launching Spatial Map...";
+            if (this.mapController) this.mapController.openMap(true);
+            this.stopListening();
+            return;
+        }
+        if (lower.includes('play music') || lower.includes('open music') || lower.includes('launch music')) {
+            this.statusText.innerText = "Launching Music Player...";
+            document.querySelector('[data-app="music"]')?.click();
+            this.stopListening();
+            return;
+        }
+        if (lower.includes('travel reports') || lower.includes('show reports') || lower.includes('sitrep')) {
+            this.statusText.innerText = "Opening Travel Reports...";
             const reportsHub = this.getTravelReports();
-            if (reportsHub) {
-                if (reportsHub.searchInput) {
-                    reportsHub.searchInput.value = query;
-                    reportsHub.loadBySearch();
-                }
-            }
+            if (reportsHub) reportsHub.open();
+            this.stopListening();
+            return;
+        }
+        if (lower.includes('compass') || lower.includes('heading')) {
+            this.statusText.innerText = "Initializing Compass...";
+            if (window.initCompass) window.initCompass();
+            this.stopListening();
+            return;
+        }
+        if (lower.includes('settings') || lower.includes('control center')) {
+            this.statusText.innerText = "Opening Settings...";
+            document.getElementById('settings-btn')?.click();
             this.stopListening();
             return;
         }
@@ -128,9 +147,15 @@ export class MicAssistant {
             return;
         }
 
-        // 3. HUGGING FACE AI BRAIN FALLBACK FOR GENERAL CONVERSATION & QUESTIONS
-        this.statusText.innerText = "Querying HuggingFace AI Engine...";
+        // 3. HUGGING FACE AI BRAIN INTEGRATION FOR INTELLIGENT QUERIES & APP LAUNCHES
+        this.statusText.innerText = "Querying AI Brain...";
         try {
+            if (window.aiController) {
+                window.aiController.sendMessage(transcript);
+                this.stopListening();
+                return;
+            }
+
             const res = await fetch('/api/brain/query', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -138,16 +163,22 @@ export class MicAssistant {
             });
             const data = await res.json();
             if (data && data.reply) {
-                this.statusText.innerText = `[${data.model || 'HF AI'}] ${data.reply}`;
+                const cleanReply = (data.reply || '').replace(/\[ACTION:[^\]]+\]/g, '').trim();
+                this.statusText.innerText = cleanReply;
                 if ('speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(data.reply);
+                    const utterance = new SpeechSynthesisUtterance(cleanReply);
                     utterance.rate = 1.0;
                     window.speechSynthesis.speak(utterance);
                 }
+                if (data.action) {
+                    if (data.action.includes('map')) this.mapController.openMap(true);
+                    if (data.action.includes('music')) document.querySelector('[data-app="music"]')?.click();
+                    if (data.action.includes('reports')) this.getTravelReports()?.open();
+                }
             }
         } catch (err) {
-            console.error("[MIC] HF AI Query Error:", err);
-            this.statusText.innerText = "AI Response Engine Unavailable";
+            console.error("[MIC] AI Query Error:", err);
+            this.statusText.innerText = "AI Engine Standby";
         }
     }
 
