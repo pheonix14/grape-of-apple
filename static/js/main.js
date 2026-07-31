@@ -248,4 +248,15 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('touchend', (e) => {
         handleTouchEvent(e, false);
     }, { passive: true });
+
+    // Global Speech & Audio unlocker for browser autoplay policies
+    const unlockAudioAndSpeech = () => {
+        if ('speechSynthesis' in window) {
+            try {
+                if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+            } catch(e){}
+        }
+    };
+    window.addEventListener('click', unlockAudioAndSpeech, { once: true });
+    window.addEventListener('touchstart', unlockAudioAndSpeech, { once: true });
 });

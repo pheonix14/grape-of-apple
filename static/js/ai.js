@@ -194,8 +194,15 @@ export class AIController {
     }
 
     speak(text) {
+        if (!this.synth && 'speechSynthesis' in window) {
+            this.synth = window.speechSynthesis;
+        }
         if (!this.synth) return;
-        try { this.synth.cancel(); } catch(e){}
+        
+        try {
+            this.synth.cancel();
+            if (this.synth.paused) this.synth.resume();
+        } catch(e){}
         
         // Clean text for speech output
         const cleanText = text.replace(/\[ACTION:[^\]]+\]/g, '').replace(/[#*`_~]/g, '').trim();
@@ -203,13 +210,21 @@ export class AIController {
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         
-        const voiceIdx = this.voiceSelect ? this.voiceSelect.value : null;
-        if (voiceIdx && this.voices[voiceIdx]) {
-            utterance.voice = this.voices[voiceIdx];
+        // Choose voice carefully
+        if (this.voices && this.voices.length > 0) {
+            const voiceIdx = this.voiceSelect ? parseInt(this.voiceSelect.value, 10) : NaN;
+            if (!isNaN(voiceIdx) && this.voices[voiceIdx]) {
+                utterance.voice = this.voices[voiceIdx];
+            } else {
+                // Find default English voice if available
+                const defaultVoice = this.voices.find(v => v.lang.startsWith('en') && v.default) || this.voices.find(v => v.lang.startsWith('en'));
+                if (defaultVoice) utterance.voice = defaultVoice;
+            }
         }
         
-        utterance.rate = 1.05;
-        utterance.pitch = 0.95;
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
         
         this.appendGlobalCaption(cleanText);
         
@@ -224,7 +239,19 @@ export class AIController {
             }, 3000);
         };
 
-        this.synth.speak(utterance);
+        utterance.onerror = (e) => {
+            console.warn("[TTS] Speech synthesis error:", e);
+        };
+
+        try {
+            this.synth.speak(utterance);
+            // Chromium bug fix: resume speech engine
+            if (this.synth.paused) {
+                this.synth.resume();
+            }
+        } catch (err) {
+            console.error("[TTS] Failed to execute speak:", err);
+        }
     }
 
     executeActionDirective(actionString, fullText = '') {
