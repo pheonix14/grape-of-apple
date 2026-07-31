@@ -172,12 +172,22 @@ export class AIController {
         if (!this.chatHistory) return;
         
         const msgDiv = document.createElement('div');
-        msgDiv.className = `max-w-[85%] rounded-xl p-3 text-xs leading-relaxed ${role === 'user' ? 'self-end bg-blue-500/20 border border-blue-500/40 text-blue-100' : 'self-start bg-white/10 border border-white/20 text-white'}`;
+        msgDiv.className = `max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed transition-all duration-300 shadow-xl ${
+            role === 'user'
+                ? 'self-end bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-blue-400/40 text-blue-100 font-[\'Space_Grotesk\'] shadow-[0_4px_20px_rgba(59,130,246,0.2)]'
+                : 'self-start bg-slate-950/80 border border-purple-500/30 text-purple-100 font-[\'Outfit\'] shadow-[0_4px_20px_rgba(168,85,247,0.2)]'
+        }`;
         
-        const title = role === 'user' ? 'OPERATIVE' : 'AI INTEL';
+        const title = role === 'user' ? 'OPERATIVE' : 'AI INTEL ENGINE';
+        const titleColor = role === 'user' ? 'text-blue-300' : 'text-purple-300';
+        const dotColor = role === 'user' ? 'bg-blue-400 shadow-[0_0_8px_#60a5fa]' : 'bg-purple-400 shadow-[0_0_8px_#c084fc]';
+        
         msgDiv.innerHTML = `
-            <div class="text-[9px] font-black uppercase tracking-widest opacity-50 mb-1">${title}</div>
-            <div class="break-words font-medium">${text.replace(/\n/g, '<br>')}</div>
+            <div class="text-[9px] font-black uppercase tracking-[0.25em] mb-1.5 flex items-center gap-1.5 ${titleColor} font-[\'Orbitron\']">
+                <span class="w-1.5 h-1.5 rounded-full ${dotColor} animate-pulse"></span>
+                ${title}
+            </div>
+            <div class="break-words font-medium text-[13px] tracking-wide leading-relaxed">${text.replace(/\n/g, '<br>')}</div>
         `;
         
         this.chatHistory.appendChild(msgDiv);
@@ -318,15 +328,56 @@ export class AIController {
         this.appendMessage('user', text);
         this.chatContext.push({ role: 'user', content: text });
 
+        // Multi-stage thinking animation indicator
         const loadingId = 'loading-' + Date.now();
         const msgDiv = document.createElement('div');
         msgDiv.id = loadingId;
-        msgDiv.className = 'self-start max-w-[85%] rounded-xl p-3 bg-white/5 border border-white/10 text-white/50 text-xs italic flex items-center gap-2';
-        msgDiv.innerHTML = `<div class="w-2 h-2 bg-purple-400 rounded-full animate-ping"></div> Syncing with Neural Net & DB...`;
+        msgDiv.className = 'self-start max-w-[85%] rounded-2xl p-3.5 bg-purple-950/40 border border-purple-500/40 text-purple-200 text-xs flex flex-col gap-2 shadow-[0_0_25px_rgba(168,85,247,0.25)] transition-all duration-300';
+        msgDiv.innerHTML = `
+            <div class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-purple-300 font-['Orbitron']">
+                <div class="w-2.5 h-2.5 bg-purple-400 rounded-full animate-ping shadow-[0_0_10px_#a855f7]"></div>
+                <span id="${loadingId}-stage">THINKING...</span>
+            </div>
+            <div id="${loadingId}-sub" class="text-[11px] font-['Space_Grotesk'] text-purple-200/80 italic font-medium tracking-wide">
+                Parsing Neural Intent & Query Context...
+            </div>
+            <div class="w-full h-1 bg-purple-950/80 rounded-full overflow-hidden border border-purple-500/20">
+                <div id="${loadingId}-bar" class="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 w-1/3 transition-all duration-500"></div>
+            </div>
+        `;
         if (this.chatHistory) {
             this.chatHistory.appendChild(msgDiv);
             this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
         }
+
+        // Multi-stage progression timers
+        const timer1 = setTimeout(() => {
+            const stageEl = document.getElementById(`${loadingId}-stage`);
+            const subEl = document.getElementById(`${loadingId}-sub`);
+            const barEl = document.getElementById(`${loadingId}-bar`);
+            if (stageEl && subEl && barEl) {
+                stageEl.innerText = 'ANALYZING...';
+                subEl.innerText = 'Scanning Spatial Database & Sector Telemetry...';
+                barEl.style.width = '68%';
+            }
+        }, 350);
+
+        const timer2 = setTimeout(() => {
+            const stageEl = document.getElementById(`${loadingId}-stage`);
+            const subEl = document.getElementById(`${loadingId}-sub`);
+            const barEl = document.getElementById(`${loadingId}-bar`);
+            if (stageEl && subEl && barEl) {
+                stageEl.innerText = 'BUILDING...';
+                subEl.innerText = 'Synthesizing Neural Response & Actions...';
+                barEl.style.width = '94%';
+            }
+        }, 700);
+
+        const cleanupTimers = () => {
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+            document.getElementById(loadingId)?.remove();
+        };
 
         try {
             // Primary backend route query with DB link & action parsing
@@ -346,7 +397,7 @@ export class AIController {
             let aiText = data.reply || "No response received.";
             let action = data.action || "";
 
-            document.getElementById(loadingId)?.remove();
+            cleanupTimers();
 
             // Extract action directive if embedded in text
             if (aiText.includes('[ACTION:')) {
@@ -390,7 +441,7 @@ export class AIController {
                     aiText = hfData[0].generated_text.replace(/^User:.*Assistant:/s, '').trim();
                 }
 
-                document.getElementById(loadingId)?.remove();
+                cleanupTimers();
                 this.appendMessage('assistant', aiText);
                 this.speak(aiText);
 
@@ -400,7 +451,7 @@ export class AIController {
                 if (text.toLowerCase().includes('reports')) this.launchAppByName('travel-reports');
 
             } catch (fallbackErr) {
-                document.getElementById(loadingId)?.remove();
+                cleanupTimers();
                 const failMsg = `Transmission Note: Processing offline telemetry for '${text}'.`;
                 this.appendMessage('assistant', failMsg);
                 this.speak(failMsg);
